@@ -1,0 +1,25 @@
+{
+  "name": "McGano Plex Archive",
+  "short_name": "McGano Plex",
+  "description": "16mm Film Collection Archive",
+  "start_url": "/mcgano-plex/mcgano-plex.html",
+  "scope": "/mcgano-plex/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#1a1410",
+  "theme_color": "#1a1410",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
