@@ -207,7 +207,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
         <div class="scan-overlay"><div class="scan-box"><div class="scan-line"></div><div class="scan-label">SCAN REEL BARCODE</div></div></div>
       </div>
       <div class="manual-scan">
-        <input type="text" id="manual-bc-input" placeholder="TYPE OR SCAN BARCODE&hellip;" autocomplete="off" autocorrect="off" spellcheck="false">
+        <input type="text" id="manual-bc-input" placeholder="SCAN OR TYPE BARCODE (e.g. 0001)&hellip;" autocomplete="off" autocorrect="off" spellcheck="false">
         <button onclick="lookupBarcode(document.getElementById('manual-bc-input').value)">LOOK UP</button>
       </div>
       <div class="scan-status" id="scan-status"><p>Point camera at reel barcode &mdash; or use Tera scanner</p></div>
@@ -259,7 +259,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
         <div class="form-field"><label>Notes</label><textarea id="add-notes" placeholder="Additional notes&hellip;"></textarea></div>
       </div>
       <div class="add-section" id="reel-assign-section" style="display:none">
-        <div class="add-section-title">Assign Reel Barcodes</div>
+        <div class="add-section-title">Assign Reel Barcodes <span style="font-size:8px;color:var(--text3);letter-spacing:1px">(OPTIONAL — scan now or later)</span></div>
         <div id="inline-scanner"><video id="inline-video" playsinline autoplay muted></video><div class="inline-scan-overlay"><div class="inline-scan-box"></div></div></div>
         <div id="reel-assign-list"></div>
       </div>
@@ -603,6 +603,24 @@ function openDetail(filmId){
   document.getElementById('dp-body').innerHTML=html;
   document.getElementById('detail-panel').classList.add('open');
 }
+
+function assignBarcodePrompt(filmId, reelNum){
+  const bc=prompt('Scan or type barcode for Reel '+reelNum+':');
+  if(!bc||!bc.trim())return;
+  const code=bc.trim();
+  // Check not already used
+  const inUse=DB.reels.find(r=>r.barcodeId&&r.barcodeId.toUpperCase()===code.toUpperCase());
+  if(inUse){showToast('\u26a0 '+code+' already assigned to '+inUse.filmTitle);return;}
+  // Find the reel and assign
+  const film=DB.features.find(f=>f.id===filmId);
+  if(!film)return;
+  const reel=DB.reels.find(r=>r.filmTitle===film.title&&String(r.reelNum)===String(reelNum));
+  if(!reel){showToast('\u26a0 Reel not found');return;}
+  reel.barcodeId=code;
+  showToast('\u2713 Reel '+reelNum+' assigned: '+code);
+  writeCheckoutToSheet(reel);
+  openDetail(filmId); // refresh detail view
+}
 function closeDetail(){document.getElementById('detail-panel').classList.remove('open');setTimeout(()=>{currentDetailFilm=null;},300);}
 
 async function initScanner(){
@@ -625,9 +643,14 @@ async function initScanner(){
 function stopScanner(){if(scanStream){scanStream.getTracks().forEach(t=>t.stop());scanStream=null;}if(barcodeDetectInterval){clearInterval(barcodeDetectInterval);barcodeDetectInterval=null;}}
 function lookupBarcode(code){
   if(!code||!code.trim())return;
-  code=code.trim().toUpperCase();
+  code=code.trim();
   document.getElementById('scan-result').style.display='block';
-  const reel=DB.reels.find(r=>r.barcodeId.toUpperCase()===code);
+  // Match flexibly: exact match OR numeric match (e.g. "0001" matches "0001")
+  const reel=DB.reels.find(r=>
+    r.barcodeId.toUpperCase()===code.toUpperCase() ||
+    r.barcodeId===code ||
+    r.barcodeId.replace(/^0+/,'')===code.replace(/^0+/,'')
+  );
   if(reel){
     const isOut=reel.status!=='IN ARCHIVE';
     const film=DB.features.find(f=>f.title===reel.filmTitle);
@@ -728,7 +751,7 @@ function updateReelAssign(){
   for(let i=1;i<=count;i++){
     reelAssignments[i]='';
     const item=document.createElement('div');item.className='reel-assign-item';
-    item.innerHTML='<div class="rai-label">Reel '+i+' of '+count+'</div><div class="rai-bc" id="reel-bc-'+i+'">NOT ASSIGNED</div><button class="btn-scan-assign" id="reel-scan-btn-'+i+'" onclick="startReelAssign('+i+')">SCAN BARCODE</button>';
+    item.innerHTML='<div class="rai-label">Reel '+i+' of '+count+'</div><div class="rai-bc" id="reel-bc-'+i+'" style="color:var(--text3);font-style:italic">OPTIONAL</div><button class="btn-scan-assign" id="reel-scan-btn-'+i+'" onclick="startReelAssign('+i+')">SCAN BARCODE</button>';
     list.appendChild(item);
   }
 }
@@ -751,8 +774,9 @@ async function startReelAssign(idx){
 }
 function assignBarcodeToReel(code){
   if(!assigningReelIndex)return;const i=assigningReelIndex;
-  if(DB.reels.find(r=>r.barcodeId.toUpperCase()===code.toUpperCase())){showToast('\u26a0 '+code+' already assigned');return;}
-  if(Object.values(reelAssignments).find(v=>v.toUpperCase()===code.toUpperCase())){showToast('\u26a0 Already used');return;}
+  // Check for duplicates flexibly
+  if(DB.reels.find(r=>r.barcodeId&&r.barcodeId.trim()!==''&&r.barcodeId.toUpperCase()===code.toUpperCase())){showToast('\u26a0 '+code+' already assigned to another reel');return;}
+  if(Object.values(reelAssignments).find(v=>v&&v.toUpperCase()===code.toUpperCase())){showToast('\u26a0 '+code+' already used for this film');return;}
   reelAssignments[i]=code;
   const bcEl=document.getElementById('reel-bc-'+i);const btnEl=document.getElementById('reel-scan-btn-'+i);
   if(bcEl)bcEl.textContent=code;if(btnEl){btnEl.textContent='CHANGE';btnEl.className='btn-scan-assign assigned';}
@@ -764,14 +788,16 @@ async function saveFilm(){
   if(!title){showToast('\u26a0 Title required');return;}
   const reelCount=parseInt(document.getElementById('add-reelcount').value)||0;
   if(reelCount<1){showToast('\u26a0 Enter number of reels');return;}
-  const unassigned=[];for(let i=1;i<=reelCount;i++){if(!reelAssignments[i])unassigned.push(i);}
-  if(unassigned.length){showToast('\u26a0 Assign barcodes: '+unassigned.join(', '));return;}
+  // Barcodes are optional — unassigned reels get a placeholder
   const newId=getNextId();
   const posterPath=document.getElementById('add-poster-input').value;
 if(posterPath)POSTER_CACHE[newId]=TMDB_IMG+'w500'+posterPath;
   const film={id:newId,title,distributor:document.getElementById('add-distributor').value.trim().toUpperCase(),year:document.getElementById('add-year').value.trim(),language:document.getElementById('add-language').value.trim().toUpperCase()||'ENGLISH',genre:document.getElementById('add-genre').value.trim().toUpperCase(),director:document.getElementById('add-director').value.trim().toUpperCase(),rtScore:document.getElementById('add-rt').value.trim(),filmStock:document.getElementById('add-stock').value.trim().toUpperCase(),format:document.getElementById('add-format').value,color:document.getElementById('add-color').value,reels:reelCount+' REEL'+(reelCount>1?'S':''),aspectRatio:document.getElementById('add-ar').value.trim(),canned:document.getElementById('add-canned').value,yearObtained:document.getElementById('add-yearobtained').value,serviced:document.getElementById('add-serviced').value,inspectionNotes:document.getElementById('add-inspect').value.trim().toUpperCase(),notes:document.getElementById('add-notes').value.trim().toUpperCase(),previousCollector:document.getElementById('add-prev').value.trim().toUpperCase(),priceBought:document.getElementById('add-price').value.trim(),screened:'',highestSold:'',status:'IN ARCHIVE',checkedOutTo:'',dateOut:'',dateIn:'',scanNotes:''};
   const newReels=[];
-  for(let i=1;i<=reelCount;i++)newReels.push({barcodeId:reelAssignments[i],filmTitle:title,reelNum:String(i),status:'IN ARCHIVE',checkedOutTo:'',dateOut:'',dateIn:'',phoneEmail:'',notes:''});
+  for(let i=1;i<=reelCount;i++){
+    const bc=reelAssignments[i]||'';  // empty string if not assigned
+    newReels.push({barcodeId:bc,filmTitle:title,reelNum:String(i),status:'IN ARCHIVE',checkedOutTo:'',dateOut:'',dateIn:'',phoneEmail:'',notes:''});
+  }
   DB.features.push(film);DB.reels.push(...newReels);
   render();showToast('\u2713 '+title+' added ('+newId+')');
   await writeFilmToSheet(film,newReels);
