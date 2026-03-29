@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v1.4 -->
+<!-- v1.5 -->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -145,7 +145,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
 .genre-bar-fill{height:100%;background:var(--gold);transition:width .5s}
 #modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:200;display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s}
 #modal-overlay.open{opacity:1;pointer-events:all}
-#modal-box{background:var(--surface);border:none;border-top:4px solid var(--gold);padding:20px 18px calc(22px + var(--safe));width:100%;max-width:900px;transform:translateY(30px);transition:transform .2s}
+#modal-box{background:var(--surface);border:none;border-top:4px solid var(--gold);padding:20px 18px calc(22px + var(--safe));width:100%;max-width:900px;transform:translateY(30px);transition:transform .2s;max-height:90vh;overflow-y:auto;-webkit-overflow-scrolling:touch}
 #modal-overlay.open #modal-box{transform:translateY(0)}
 #modal-box h3{font-family:var(--serif);font-size:20px;font-weight:700;margin-bottom:6px;color:var(--text)}
 .modal-sub{font-family:var(--mono);font-size:11px;color:var(--text3);margin-bottom:16px;letter-spacing:.5px}
@@ -862,12 +862,43 @@ function confirmModal(){
     film.yearObtained=document.getElementById('edit-obtained').value.trim();
     film.inspectionNotes=document.getElementById('edit-inspect').value.trim().toUpperCase();
     film.notes=document.getElementById('edit-notes').value.trim().toUpperCase();
+    // Save reel barcodes
+    const reelCount=parseInt(document.getElementById('modal-confirm-btn').dataset.reelCount)||0;
+    const newSheetReels=[];
+    for(let i=1;i<=reelCount;i++){
+      const bc=(document.getElementById('edit-reel-'+i)?.value||'').trim();
+      const existing=DB.reels.find(r=>r.filmTitle===film.title&&String(r.reelNum)===String(i));
+      if(existing){
+        // Check if barcode changed
+        if(bc && bc!==existing.barcodeId){
+          // Make sure not already used by another reel
+          const inUse=DB.reels.find(r=>r.barcodeId&&r.barcodeId.toUpperCase()===bc.toUpperCase()&&!(r.filmTitle===film.title&&String(r.reelNum)===String(i)));
+          if(inUse){showToast('\u26a0 Barcode '+bc+' already in use');return;}
+          existing.barcodeId=bc;
+        } else if(!bc) {
+          existing.barcodeId='';
+        }
+        newSheetReels.push(existing);
+      } else if(bc||true) {
+        // Create new reel entry
+        const inUse=bc&&DB.reels.find(r=>r.barcodeId&&r.barcodeId.toUpperCase()===bc.toUpperCase());
+        if(inUse&&bc){showToast('\u26a0 Barcode '+bc+' already in use');return;}
+        const newReel={barcodeId:bc,filmTitle:film.title,reelNum:String(i),status:'IN ARCHIVE',checkedOutTo:'',dateOut:'',dateIn:'',phoneEmail:'',notes:''};
+        DB.reels.push(newReel);
+        newSheetReels.push(newReel);
+      }
+    }
     closeModal();
     render();
     openDetail(filmId);
     showToast('\u2713 '+film.title+' updated');
-    // Write back to sheet if signed in
-    if(isAuthed()) writeEditToSheet(film);
+    if(isAuthed()){
+      writeEditToSheet(film);
+      if(newSheetReels.length){
+        // Update existing reels or append new ones to sheet
+        newSheetReels.forEach(r=>writeCheckoutToSheet(r).catch(()=>{}));
+      }
+    }
     return;
   }
   if(!modalReel)return;
@@ -1044,7 +1075,23 @@ function openEditModal(filmId) {
   if (!film) return;
   document.getElementById('modal-title').textContent = 'Edit Film';
   document.getElementById('modal-sub').textContent = film.title;
+  // Build reel barcode assignment rows
+  const existingReels = DB.reels.filter(r => r.filmTitle === film.title);
+  const reelCountMatch = (film.reels||'').match(/(\d+)\s*REEL/i);
+  const expectedCount = reelCountMatch ? parseInt(reelCountMatch[1]) : existingReels.length || 1;
+  let reelRows = '';
+  for (let i = 1; i <= expectedCount; i++) {
+    const existing = existingReels.find(r => String(r.reelNum) === String(i));
+    const bcVal = existing ? (existing.barcodeId||'') : '';
+    reelRows += '<div class="modal-form-field">' +
+      '<label>Reel ' + i + ' Barcode <span style="color:var(--text3);font-weight:400">(scan or type)</span></label>' +
+      '<input type="text" id="edit-reel-' + i + '" value="' + esc(bcVal) + '" ' +
+        'placeholder="Scan barcode or leave blank" autocomplete="off" autocorrect="off" spellcheck="false">' +
+      '</div>';
+  }
+
   document.getElementById('modal-content').innerHTML = `
+    <div style="font-family:var(--mono);font-size:9px;color:var(--gold);letter-spacing:2px;text-transform:uppercase;border-bottom:2px solid var(--gold);padding-bottom:5px;margin-bottom:12px">Film Details</div>
     <div class="modal-form-field"><label>Director</label><input type="text" id="edit-director" value="${esc(film.director||'')}" autocomplete="off"></div>
     <div class="modal-form-field"><label>Year</label><input type="text" id="edit-year" value="${esc(film.year||'')}" autocomplete="off"></div>
     <div class="modal-form-field"><label>Genre</label><input type="text" id="edit-genre" value="${esc(film.genre||'')}" autocomplete="off"></div>
@@ -1059,7 +1106,12 @@ function openEditModal(filmId) {
     <div class="modal-form-field"><label>Year Obtained</label><input type="text" id="edit-obtained" value="${esc(film.yearObtained||'')}" autocomplete="off"></div>
     <div class="modal-form-field"><label>Inspection Notes</label><input type="text" id="edit-inspect" value="${esc(film.inspectionNotes||'')}" autocomplete="off"></div>
     <div class="modal-form-field"><label>Notes</label><input type="text" id="edit-notes" value="${esc(film.notes||'')}" autocomplete="off"></div>
+    <div style="font-family:var(--mono);font-size:9px;color:var(--gold);letter-spacing:2px;text-transform:uppercase;border-bottom:2px solid var(--gold);padding-bottom:5px;margin:16px 0 12px">Reel Barcodes</div>
+    <div style="font-family:var(--mono);font-size:10px;color:var(--text3);margin-bottom:10px">Scan or type each reel's barcode. Use your Tera scanner — it will auto-fill each field.</div>
+    ${reelRows}
   `;
+  // Store expected reel count for save
+  document.getElementById('modal-confirm-btn').dataset.reelCount = expectedCount;
   document.getElementById('modal-confirm-btn').className = 'btn-confirm';
   document.getElementById('modal-confirm-btn').textContent = 'Save Changes';
   modalAction = 'edit';
