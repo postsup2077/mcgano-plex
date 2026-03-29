@@ -1,43 +1,39 @@
-const CACHE = 'mcgano-plex-v3';
-const ASSETS = [
-  '/mcgano-plex/mcgano-plex.html',
-  '/mcgano-plex/manifest.json',
-  '/mcgano-plex/icon-192.png',
-  '/mcgano-plex/icon-512.png',
-  'https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Courier+Prime:wght@400;700&display=swap'
-];
+// v4 - network first for HTML, cache for assets only
+const CACHE = 'mcgano-plex-v4';
 
-// Install — cache core assets
 self.addEventListener('install', e => {
-  e.waitUntil(
-    caches.open(CACHE).then(cache => cache.addAll(ASSETS)).then(() => self.skipWaiting())
-  );
+  e.waitUntil(self.skipWaiting());
 });
 
-// Activate — clean old caches
 self.addEventListener('activate', e => {
   e.waitUntil(
-    caches.keys().then(keys =>
-      Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
-    ).then(() => self.clients.claim())
+    caches.keys()
+      .then(keys => Promise.all(keys.map(k => caches.delete(k))))
+      .then(() => self.clients.claim())
   );
 });
 
-// Fetch — network first for Sheet data, cache first for app shell
 self.addEventListener('fetch', e => {
   const url = e.request.url;
   
-  // Always go to network for Google Sheets / TMDB / OMDB data
-  if (url.includes('docs.google.com') || 
-      url.includes('sheets.googleapis.com') ||
-      url.includes('themoviedb.org') ||
-      url.includes('omdbapi.com') ||
-      url.includes('accounts.google.com')) {
-    e.respondWith(fetch(e.request).catch(() => new Response('{}', {headers:{'Content-Type':'application/json'}})));
+  // NEVER cache the main HTML file - always fetch fresh
+  if (url.includes('mcgano-plex.html')) {
+    e.respondWith(fetch(e.request));
     return;
   }
   
-  // Cache first for app shell and assets
+  // Always go to network for data APIs
+  if (url.includes('docs.google.com') || 
+      url.includes('sheets.googleapis.com') ||
+      url.includes('drive.googleapis.com') ||
+      url.includes('themoviedb.org') ||
+      url.includes('omdbapi.com') ||
+      url.includes('accounts.google.com')) {
+    e.respondWith(fetch(e.request).catch(() => new Response('', {status: 503})));
+    return;
+  }
+  
+  // Cache fonts and icons
   e.respondWith(
     caches.match(e.request).then(cached => {
       if (cached) return cached;
@@ -47,7 +43,7 @@ self.addEventListener('fetch', e => {
           caches.open(CACHE).then(cache => cache.put(e.request, clone));
         }
         return response;
-      }).catch(() => caches.match('/mcgano-plex/mcgano-plex.html'));
+      });
     })
   );
 });
