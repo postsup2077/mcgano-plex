@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v1.5 -->
+<!-- v1.9 -->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -11,6 +11,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" type="image/png" href="favicon.png">
 <meta name="theme-color" content="#1a1410">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <style>
@@ -182,7 +183,9 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
 </div>
 <div id="app">
   <div id="header">
-    <div><h1>McGano Plex</h1><div class="subtitle">16mm Film Archive</div></div>
+    <div style="display:flex;align-items:center;gap:12px">
+      <img src="data:image/png;base64,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" style="height:44px;width:auto;display:block" alt="McGano Plex">
+    </div>
     <div class="hright">
       <div class="stats" id="header-stats">&mdash;</div>
       <button class="btn-signin" id="btn-signin" onclick="signIn()" style="display:none">&#9654; Sign In</button>
@@ -323,7 +326,9 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
 <script>
 const CLIENT_ID='1029385927428-qe0e0ptjus8dog7m18uosl3u2i4triq7.apps.googleusercontent.com';
 const SHEET_ID='1uRCOK_3i2w4gE4652NLzub9KZ_QMHWf20k0VVIAiTCA';
-const SCOPES='https://www.googleapis.com/auth/spreadsheets';
+const SCOPES='https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive.file';
+const DRIVE_FOLDER_ID='1kzgKqW4U83t7-h0Vr4D4b3XcM8aBgewL';
+const POSTER_COL='T'; // Column T in Features sheet
 let DB={features:[],reels:[]};
 let POSTER_CACHE={}; // filmId -> full poster URL
 const TMDB_IMG='https://image.tmdb.org/t/p/';
@@ -353,6 +358,8 @@ async function loadFromSheet(){
     const rJson=JSON.parse(rText.replace(/^[^(]+\(/,'').replace(/\);\s*$/,''));
     DB.features=parseFeatures(fJson);
     DB.reels=parseReels(rJson);
+    // Load poster URLs from sheet into cache
+    DB.features.forEach(f=>{if(f.posterUrl&&f.posterUrl.trim())POSTER_CACHE[f.id]=f.posterUrl.trim();});
     const now=new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
     setSyncStatus('live',DB.features.length+' films \u00b7 synced '+now);
     render();
@@ -369,7 +376,19 @@ function cv(row,i){const c=row.c&&row.c[i];if(!c||c.v===null||c.v===undefined)re
 function parseFeatures(json){
   return(json.table.rows||[]).map((row,i)=>{
     const title=cv(row,0);if(!title||title==='TITLE')return null;
-    return{id:cv(row,24)||('16MM-'+String(i+1).padStart(4,'0')),title,distributor:cv(row,1),year:cv(row,2),language:cv(row,3),genre:cv(row,4),director:cv(row,5),rtScore:cv(row,7),filmStock:cv(row,8),format:cv(row,9),color:cv(row,10),reels:cv(row,11),aspectRatio:cv(row,12),canned:cv(row,14),yearObtained:cv(row,15),serviced:cv(row,16),inspectionNotes:cv(row,17),notes:cv(row,18),previousCollector:cv(row,19),priceBought:cv(row,20),screened:cv(row,21),highestSold:cv(row,22),status:cv(row,25)||'IN ARCHIVE',checkedOutTo:cv(row,26),dateOut:cv(row,27),dateIn:cv(row,28),scanNotes:cv(row,29)};
+    return{
+      id:cv(row,25)||('16MM-'+String(i+1).padStart(4,'0')),
+      title,distributor:cv(row,1),year:cv(row,2),language:cv(row,3),genre:cv(row,4),
+      director:cv(row,5),rtScore:cv(row,7),filmStock:cv(row,8),format:cv(row,9),
+      color:cv(row,10),reels:cv(row,11),aspectRatio:cv(row,12),canned:cv(row,14),
+      yearObtained:cv(row,15),serviced:cv(row,16),inspectionNotes:cv(row,17),
+      notes:cv(row,18),
+      posterUrl:cv(row,19),
+      previousCollector:cv(row,20),priceBought:cv(row,21),screened:cv(row,22),
+      highestSold:cv(row,23),
+      status:cv(row,26)||'IN ARCHIVE',
+      checkedOutTo:cv(row,27),dateOut:cv(row,28),dateIn:cv(row,29),scanNotes:cv(row,30)
+    };
   }).filter(Boolean);
 }
 function parseReels(json){
@@ -587,14 +606,24 @@ function renderFilmList(query){
     const outCount=DB.reels.filter(r=>r.filmTitle===f.title&&r.status!=='IN ARCHIVE').length;
     const reelCount=DB.reels.filter(r=>r.filmTitle===f.title).length;
     const stag=outCount>0?'<span class="tag status-out">'+outCount+' REEL'+(outCount>1?'S':'')+' OUT</span>':'<span class="tag status-in">IN ARCHIVE</span>';
-    return '<div class="film-card" onclick="openDetail(\''+esc(f.id)+'\')">'+
-      '<div class="fc-top"><div class="fc-title">'+esc(f.title)+'</div></div>'+
-      '<div class="fc-director">'+(f.director||'\u2014')+' \u00b7 '+(f.year||'\u2014')+'</div>'+
-      '<div class="fc-meta">'+
-      (f.genre?f.genre.split(',').slice(0,2).map(g=>'<span class="tag">'+esc(g.trim())+'</span>').join(''):'')+
-      (f.rtScore?'<span class="tag rt">&#127813; '+esc(f.rtScore)+'</span>':'')+
-      (reelCount?'<span class="tag">'+reelCount+' reel'+(reelCount>1?'s':'')+'</span>':'')+
-      stag+'</div></div>';
+    const posterThumb=POSTER_CACHE[f.id]
+      ?'<img src="'+POSTER_CACHE[f.id]+'" style="width:46px;min-width:46px;height:68px;object-fit:cover;border-radius:2px;margin-right:14px;flex-shrink:0;border:1px solid var(--border)" onerror="this.style.display=\'none\'">'
+      :'<div style="width:46px;min-width:46px;height:68px;background:var(--surface2);border:1px solid var(--border);border-radius:2px;margin-right:14px;flex-shrink:0;display:flex;align-items:center;justify-content:center;overflow:hidden;padding:3px"><span style=\"font-family:var(--serif);font-size:7px;font-weight:700;color:var(--text3);text-align:center;line-height:1.2;text-transform:uppercase\">'+esc(f.title)+'</span></div>';
+    return '<div class="film-card" onclick="openDetail(\\''+esc(f.id)+'\\')">'+
+      '<div style="display:flex;align-items:flex-start">'+
+        posterThumb+
+        '<div style="flex:1;min-width:0">'+
+          '<div class="fc-top"><div class="fc-title">'+esc(f.title)+'</div></div>'+
+          '<div class="fc-director">'+(f.director||'\u2014')+' \u00b7 '+(f.year||'\u2014')+'</div>'+
+          '<div class="fc-meta">'+
+            (f.genre?f.genre.split(',').slice(0,2).map(g=>'<span class="tag">'+esc(g.trim())+'</span>').join(''):'')+
+            (f.rtScore?'<span class="tag rt">&#127813; '+esc(f.rtScore)+'</span>':'')+
+            (reelCount?'<span class="tag">'+reelCount+' reel'+(reelCount>1?'s':'')+'</span>':'')+
+            stag+
+          '</div>'+
+        '</div>'+
+      '</div>'+
+    '</div>';
   }).join('');
 }
 document.getElementById('search-input').addEventListener('input',e=>renderFilmList(e.target.value));
@@ -609,7 +638,7 @@ function openDetail(filmId){
   let html='<div style="display:flex;gap:16px;margin-bottom:16px;align-items:flex-start">';
   html+='<div style="flex-shrink:0">';
   if(dposter){html+='<img src="'+dposter+'" style="width:100px;border-radius:3px;border:1px solid var(--border2);display:block" onerror="this.style.display=\'none\'">';}
-  else{html+='<div style="width:100px;height:150px;background:var(--surface2);border:1px solid var(--border);border-radius:3px;display:flex;align-items:center;justify-content:center;padding:10px"><span style=\"font-family:var(--serif);font-size:11px;font-weight:700;color:var(--text2);text-align:center;line-height:1.3;text-transform:uppercase\">'+esc(film.title)+'</span></div>';}
+  else{html+='<div style="width:100px;height:150px;background:var(--surface2);border:1px solid var(--border);border-left:3px solid var(--gold);border-radius:3px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:10px;gap:6px"><span style=\"font-family:var(--mono);font-size:8px;color:var(--gold);letter-spacing:1px\">NO POSTER</span><span style=\"font-family:var(--serif);font-size:10px;font-weight:700;color:var(--text2);text-align:center;line-height:1.3;text-transform:uppercase\">'+esc(film.title)+'</span></div>';}
   html+='</div><div style="flex:1">';
   html+='<div style="font-family:var(--serif);font-size:18px;font-weight:700;line-height:1.3;margin-bottom:6px">'+esc(film.title)+'</div>';
   html+='<div style="font-family:var(--mono);font-size:11px;color:var(--text3);margin-bottom:10px">'+(film.director||'')+(film.year?' · '+film.year:'')+'</div>';
@@ -727,6 +756,123 @@ function openReelAssignModal(filmId, count, startFrom) {
   // Auto-focus first input for Tera scanner
   setTimeout(() => document.getElementById('reel-assign-' + (offset+1))?.focus(), 300);
 }
+
+
+async function uploadPosterToDrive(file, filmId) {
+  if (!isAuthed()) { showToast('Sign in to upload posters'); return null; }
+  const film = DB.features.find(f => f.id === filmId);
+  if (!film) return null;
+
+  showToast('Uploading poster\u2026');
+
+  try {
+    // Step 1: Upload file to Drive folder
+    const metadata = {
+      name: filmId + '_poster.' + file.name.split('.').pop(),
+      parents: [DRIVE_FOLDER_ID]
+    };
+    const form = new FormData();
+    form.append('metadata', new Blob([JSON.stringify(metadata)], {type:'application/json'}));
+    form.append('file', file);
+
+    const uploadRes = await fetch(
+      'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,webContentLink',
+      { method:'POST', headers:{Authorization:'Bearer '+accessToken}, body:form }
+    );
+    if (!uploadRes.ok) throw new Error('Drive upload failed: ' + uploadRes.status);
+    const uploadData = await uploadRes.json();
+    const fileId = uploadData.id;
+
+    // Step 2: Make file publicly readable
+    await fetch('https://www.googleapis.com/drive/v3/files/'+fileId+'/permissions', {
+      method:'POST',
+      headers:{Authorization:'Bearer '+accessToken,'Content-Type':'application/json'},
+      body:JSON.stringify({role:'reader',type:'anyone'})
+    });
+
+    // Step 3: Get direct image URL
+    const posterUrl = 'https://drive.google.com/thumbnail?id='+fileId+'&sz=w500';
+
+    // Step 4: Save URL to POSTER_CACHE and Sheet
+    POSTER_CACHE[filmId] = posterUrl;
+    film.posterUrl = posterUrl;
+
+    // Write to Sheet column T
+    await savePosterUrlToSheet(filmId, posterUrl);
+
+    showToast('\u2713 Poster saved & synced to all devices');
+    return posterUrl;
+
+  } catch(e) {
+    console.error('Drive upload error:', e);
+    showToast('\u26a0 Upload failed: ' + e.message);
+    return null;
+  }
+}
+
+async function savePosterUrlToSheet(filmId, posterUrl) {
+  try {
+    // Find the row for this film in the sheet
+    const data = await sheetsGet('Features!A2:A');
+    const rows = data.values || [];
+    // Find by title since ID might be in col Y after shift
+    const film = DB.features.find(f => f.id === filmId);
+    if (!film) return;
+    const idx = rows.findIndex(r => r[0] && r[0].toUpperCase() === film.title.toUpperCase());
+    if (idx === -1) { console.warn('Film not found in sheet for poster URL save'); return; }
+    const sheetRow = idx + 2;
+    await sheetsUpdate('Features!T'+sheetRow, [[posterUrl]]);
+    console.log('Poster URL saved to Sheet row', sheetRow);
+  } catch(e) {
+    console.warn('Failed to save poster URL to sheet:', e.message);
+  }
+}
+function previewCustomPoster(event) {
+  const filmId = window._editingFilmId;
+  const file = event.target.files[0];
+  if (!file || !filmId) return;
+
+  // Show local preview immediately
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const wrap = document.getElementById('edit-poster-preview-wrap');
+    if (wrap) wrap.innerHTML = '<img src="'+e.target.result+'" style="width:70px;height:105px;object-fit:cover;border-radius:2px;border:1px solid var(--border);display:block">';
+  };
+  reader.readAsDataURL(file);
+
+  // Upload to Drive for cross-device sync
+  if (isAuthed()) {
+    uploadPosterToDrive(file, filmId).then(url => {
+      if (url) {
+        // Refresh preview with Drive URL
+        const wrap = document.getElementById('edit-poster-preview-wrap');
+        if (wrap) wrap.innerHTML = '<img src="'+url+'" style="width:70px;height:105px;object-fit:cover;border-radius:2px;border:1px solid var(--border);display:block">';
+        // Refresh list/detail if visible
+        renderFilmList(document.getElementById('search-input').value);
+      }
+    });
+  } else {
+    showToast('Sign in to sync poster across devices');
+  }
+}
+
+async function fetchPosterForFilm(filmId) {
+  const film = DB.features.find(f => f.id === filmId);
+  if (!film) return;
+  const btn = document.getElementById('fetch-poster-btn');
+  if (btn) { btn.textContent = 'Searching\u2026'; btn.disabled = true; }
+  const poster = await getPoster(film);
+  if (poster) {
+    POSTER_CACHE[filmId] = poster;
+    const wrap = document.getElementById('edit-poster-preview-wrap');
+    if (wrap) wrap.innerHTML = '<img src="'+poster+'" style="width:70px;height:105px;object-fit:cover;border-radius:2px;border:1px solid var(--border);display:block">';
+    showToast('\u2713 Poster found!');
+  } else {
+    showToast('\u26a0 No poster found');
+  }
+  if (btn) { btn.textContent = '\u25ba FETCH FROM TMDB/OMDB'; btn.disabled = false; }
+}
+
 function assignBarcodePrompt(filmId, reelNum){
   const bc=prompt('Scan or type barcode for Reel '+reelNum+':');
   if(!bc||!bc.trim())return;
@@ -1091,6 +1237,20 @@ function openEditModal(filmId) {
   }
 
   document.getElementById('modal-content').innerHTML = `
+    <div style="font-family:var(--mono);font-size:9px;color:var(--gold);letter-spacing:2px;text-transform:uppercase;border-bottom:2px solid var(--gold);padding-bottom:5px;margin-bottom:12px">Poster</div>
+    <div style="display:flex;align-items:flex-start;gap:14px;margin-bottom:16px">
+      <div id="edit-poster-preview-wrap" style="flex-shrink:0">
+        <div style="width:70px;height:105px;background:var(--surface2);border:1px solid var(--border);border-left:3px solid var(--gold);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:8px;color:var(--text3);text-align:center;padding:6px">LOADING</div>
+      </div>
+      <div style="flex:1">
+        <div style="font-family:var(--mono);font-size:10px;color:var(--text2);margin-bottom:10px;line-height:1.5">Upload your own poster, or search TMDB &amp; OMDB.</div>
+        <label style="display:block;background:var(--text);color:#fff;font-family:var(--mono);font-size:10px;font-weight:700;padding:9px 14px;cursor:pointer;letter-spacing:1px;text-align:center;margin-bottom:8px">
+          &#8679; UPLOAD IMAGE
+          <input type="file" id="edit-poster-file" accept="image/*" style="display:none" onchange="previewCustomPoster(event)">
+        </label>
+        <button id="fetch-poster-btn" style="width:100%;background:none;border:1px solid var(--border);color:var(--text2);font-family:var(--mono);font-size:10px;padding:9px 14px;cursor:pointer;letter-spacing:1px">&#9654; FETCH FROM TMDB/OMDB</button>
+      </div>
+    </div>
     <div style="font-family:var(--mono);font-size:9px;color:var(--gold);letter-spacing:2px;text-transform:uppercase;border-bottom:2px solid var(--gold);padding-bottom:5px;margin-bottom:12px">Film Details</div>
     <div class="modal-form-field"><label>Director</label><input type="text" id="edit-director" value="${esc(film.director||'')}" autocomplete="off"></div>
     <div class="modal-form-field"><label>Year</label><input type="text" id="edit-year" value="${esc(film.year||'')}" autocomplete="off"></div>
@@ -1112,6 +1272,20 @@ function openEditModal(filmId) {
   `;
   // Store expected reel count for save
   document.getElementById('modal-confirm-btn').dataset.reelCount = expectedCount;
+  setTimeout(() => {
+    const wrap = document.getElementById('edit-poster-preview-wrap');
+    const fetchBtn = document.getElementById('fetch-poster-btn');
+    if (wrap) {
+      const cached = POSTER_CACHE[filmId];
+      if (cached) {
+        wrap.innerHTML = '<img src="'+cached+'" style="width:70px;height:105px;object-fit:cover;border-radius:2px;border:1px solid var(--border);display:block">';
+      } else {
+        wrap.innerHTML = '<div style="width:70px;height:105px;background:var(--surface2);border:1px solid var(--border);border-left:3px solid var(--gold);display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:var(--mono);font-size:8px;color:var(--text3);text-align:center;padding:6px;gap:4px"><span style=color:var(--gold)>NO POSTER</span><span>'+film.title+'</span></div>';
+      }
+    }
+    if (fetchBtn) fetchBtn.onclick = () => fetchPosterForFilm(filmId);
+    window._editingFilmId = filmId;
+  }, 150);
   document.getElementById('modal-confirm-btn').className = 'btn-confirm';
   document.getElementById('modal-confirm-btn').textContent = 'Save Changes';
   modalAction = 'edit';
