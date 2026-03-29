@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 cache-bust-20260329 -->
+<!-- v2.2 -->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -341,17 +341,14 @@ let reelAssignments={},assigningReelIndex=null;
 
 document.addEventListener('DOMContentLoaded',()=>{
   document.getElementById('add-yearobtained').value=new Date().getFullYear();
+  // Hide loading immediately - never block on network
+  document.getElementById('loading').style.display='none';
+  // Load from Sheet in background
   loadFromSheet();
   setTimeout(loadGoogleAuth,2000);
 });
 
 async function loadFromSheet(){
-  // Safety net — hide loading after 6s regardless
-  const loadingTimeout = setTimeout(()=>{
-    document.getElementById('loading').style.display='none';
-    setSyncStatus('error','Sheet timeout \u2014 check connection');
-  }, 6000);
-
   setSyncStatus('busy','Fetching from Sheet\u2026');
   try{
     const fURL='https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=out:json&sheet=Features';
@@ -364,19 +361,15 @@ async function loadFromSheet(){
     const rJson=JSON.parse(rText.replace(/^[^(]+\(/,'').replace(/\);\s*$/,''));
     DB.features=parseFeatures(fJson);
     DB.reels=parseReels(rJson);
-    clearTimeout(loadingTimeout);
     // Load poster URLs from sheet into cache
     DB.features.forEach(f=>{if(f.posterUrl&&f.posterUrl.trim())POSTER_CACHE[f.id]=f.posterUrl.trim();});
     const now=new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
     setSyncStatus('live',DB.features.length+' films \u00b7 synced '+now);
     render();
-    document.getElementById('loading').style.display='none';
     fetchPostersInBackground();
   }catch(e){
-    clearTimeout(loadingTimeout);
-    document.getElementById('loading-sub').textContent='ERROR: '+e.message;
-    setSyncStatus('error','Sheet unavailable');
-    setTimeout(()=>document.getElementById('loading').style.display='none',1000);
+    setSyncStatus('error','Could not reach Sheet \u2014 check sharing settings');
+    console.warn('Sheet load error:', e.message);
   }
 }
 
