@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="McGano Plex">
+<title>McGano Plex Archive</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body style="background:#0c0b09;color:#c8a84b;font-family:Georgia,serif;margin:0;height:100vh;display:flex;flex-direction:column">
+<div id="loading" style="position:fixed;inset:0;background:#0c0b09;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;z-index:500">
+  <div style="font-size:24px;font-weight:700;letter-spacing:4px">McGano Plex</div>
+  <div id="loading-sub" style="font-family:monospace;font-size:10px;color:#5a5040;letter-spacing:3px">FETCHING ARCHIVE...</div>
+</div>
+<script>
+const SHEET_ID = "1uRCOK_3i2w4gE4652NLzub9KZ_QMHWf20k0VVIAiTCA";
+async function boot() {
+  try {
+    const r = await fetch("https://docs.google.com/spreadsheets/d/" + SHEET_ID + "/gviz/tq?tqx=out:json&sheet=Features");
+    const text = await r.text();
+    const json = JSON.parse(text.replace(/^[^(]+\(/, "").replace(/\);?\s*$/, ""));
+    const rows = json.table.rows || [];
+    document.getElementById("loading").style.display = "none";
+    document.getElementById("app").style.display = "block";
+    document.getElementById("count").textContent = rows.length + " films loaded from Sheet";
+  } catch(e) {
+    document.getElementById("loading-sub").textContent = "ERROR: " + e.message;
+    document.getElementById("loading-sub").style.color = "#c04040";
+  }
+}
+boot();
+</script>
+<div id="app" style="display:none;padding:40px;text-align:center">
+  <h1 style="letter-spacing:4px;margin-bottom:16px">McGano Plex</h1>
+  <p id="count" style="font-family:monospace;color:#9e9080"></p>
+  <p style="font-family:monospace;font-size:12px;color:#5a5040;margin-top:20px">Full app coming — Sheet connection confirmed</p>
+</div>
+</body>
+</html>
