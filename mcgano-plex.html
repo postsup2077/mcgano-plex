@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="McGano Plex">
+<title>McGano Plex Archive</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f5f0e8;--surface:#ffffff;--surface2:#f0ebe0;--surface3:#e8e0d0;
+  --border:#d0c8b8;--border2:#b8ae9e;
+  --text:#1a1410;--text2:#5a4e3e;--text3:#9a8e7e;
+  --gold:#c8102e;--gold3:#a00820;
+  --red:#c8102e;--green:#2a6e3a;
+  --safe:env(safe-area-inset-bottom,0px);
+  --serif:'Playfair Display',Georgia,serif;
+  --mono:'Courier Prime','Courier New',monospace
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:var(--serif)}
+#app{display:flex;flex-direction:column;height:100%;max-width:900px;margin:0 auto}
+#header{background:var(--text);border-bottom:4px solid var(--gold);padding:14px 18px 11px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;position:relative}
+#header::after{content:'';display:none}
+#header h1{font-family:var(--serif);font-size:20px;font-weight:700;letter-spacing:2px;color:#ffffff;text-transform:uppercase}
+#header .subtitle{font-family:var(--mono);font-size:9px;color:rgba(255,255,255,0.5);letter-spacing:2px;text-transform:uppercase;margin-top:2px}
+#header .hright{display:flex;flex-direction:column;align-items:flex-end;gap:4px}
+#header .stats{font-family:var(--mono);font-size:10px;color:rgba(255,255,255,0.6);letter-spacing:.5px}
+.btn-signin{background:var(--gold);border:none;color:#fff;border-radius:0;padding:5px 12px;font-family:var(--mono);font-size:9px;font-weight:700;cursor:pointer;letter-spacing:1px;text-transform:uppercase;white-space:nowrap}
+.btn-signout{background:none;border:1px solid rgba(255,255,255,0.3);color:rgba(255,255,255,0.6);border-radius:0;padding:4px 10px;font-family:var(--mono);font-size:9px;cursor:pointer;letter-spacing:.5px}
+#content{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
+#tabbar{background:var(--text);border-top:2px solid var(--gold);display:flex;padding-bottom:var(--safe);flex-shrink:0;position:relative}
+#tabbar::before{content:'';display:none}
+.tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:10px 4px 9px;cursor:pointer;color:rgba(255,255,255,0.45);font-family:var(--mono);font-size:9px;letter-spacing:1.5px;gap:5px;transition:color .15s;text-transform:uppercase}
+.tab svg{width:20px;height:20px}.tab.active{color:#ffffff}
+.view{display:none;padding:0 0 20px}.view.active{display:block}
+.sync-bar{background:var(--surface2);border-bottom:1px solid var(--border);padding:7px 16px;display:flex;align-items:center;justify-content:space-between;font-family:var(--mono);font-size:10px;color:var(--text3);letter-spacing:.5px}
+.sync-left{display:flex;align-items:center;gap:6px}
+.sync-dot{width:6px;height:6px;border-radius:50%;background:var(--text3);flex-shrink:0}
+.sync-dot.live{background:var(--green);animation:pulse 2s infinite}
+.sync-dot.error{background:var(--red)}
+.sync-dot.busy{background:var(--gold);animation:pulse .6s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.btn-sync{background:none;border:1px solid var(--border);color:var(--text3);border-radius:0;padding:4px 10px;font-family:var(--mono);font-size:9px;cursor:pointer;letter-spacing:1px}
+.btn-sync:hover{border-color:var(--gold3);color:var(--gold)}
+.searchbar{padding:12px 16px 10px;position:sticky;top:0;background:var(--bg);z-index:10;border-bottom:1px solid var(--border)}
+.searchbar input{width:100%;background:transparent;border:none;border-bottom:2px solid var(--text);border-radius:0;padding:8px 0;color:var(--text);font-family:var(--serif);font-size:15px;outline:none;letter-spacing:.5px}
+.searchbar input::placeholder{color:var(--text3)}.searchbar input:focus{border-color:var(--gold3)}
+.film-list{padding:0 16px;border-top:1px solid var(--border)}
+.film-card{background:var(--surface);border:none;border-bottom:1px solid var(--border);border-radius:0;margin-bottom:0;padding:14px 0;cursor:pointer;transition:background .15s}
+.film-card:active{background:var(--surface2)}
+.fc-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.fc-title{font-family:var(--serif);font-size:17px;font-weight:700;line-height:1.25;flex:1;color:var(--text);text-transform:none}
+.fc-id{font-family:var(--mono);font-size:11px;color:var(--gold);font-weight:700;white-space:nowrap;margin-top:2px}
+.fc-director{font-family:var(--mono);font-size:12px;color:var(--text3);margin-top:6px;letter-spacing:.5px}
+.fc-meta{margin-top:7px;display:flex;flex-wrap:wrap;gap:5px;align-items:center}
+.tag{font-family:var(--mono);font-size:9px;background:transparent;border:1px solid var(--border2);border-radius:20px;padding:2px 8px;color:var(--text2);letter-spacing:.5px;text-transform:uppercase}
+.tag.rt{color:var(--gold);border-color:var(--gold)}.tag.status-out{background:var(--gold);color:#ffffff;border-color:var(--gold)}.tag.status-in{color:var(--green);border-color:var(--green)}
+#detail-panel{position:fixed;inset:0;background:var(--bg);z-index:100;display:flex;flex-direction:column;transform:translateX(100%);transition:transform .28s cubic-bezier(.4,0,.2,1)}
+#detail-panel.open{transform:translateX(0)}
+.dp-header{background:var(--text);border-bottom:3px solid var(--gold);padding:14px 16px;display:flex;align-items:center;gap:12px;flex-shrink:0;position:relative}
+.dp-header::after{content:'';display:none}
+.dp-back{color:#ffffff;font-family:var(--mono);font-size:11px;cursor:pointer;display:flex;align-items:center;gap:4px;letter-spacing:1px;text-transform:uppercase}
+.dp-header h2{font-family:var(--serif);font-size:15px;font-weight:700;flex:1;line-height:1.3;color:#ffffff}
+.dp-body{overflow-y:auto;flex:1;padding:16px}
+.dp-id{font-family:var(--mono);font-size:10px;color:var(--gold);margin-bottom:10px;letter-spacing:1px}
+.dp-section{margin-bottom:20px}
+.dp-section-title{font-family:var(--mono);font-size:9px;color:var(--gold);letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;border-bottom:2px solid var(--gold);padding-bottom:5px}
+.dp-row{display:flex;gap:6px;margin-bottom:6px;flex-wrap:wrap}
+.dp-field{background:var(--surface2);border:none;border-left:3px solid var(--border);border-radius:0;padding:8px 11px;flex:1;min-width:120px}
+.dp-field label{font-family:var(--mono);font-size:10px;color:var(--text3);letter-spacing:1.5px;text-transform:uppercase;display:block;margin-bottom:4px}
+.dp-field span{font-family:var(--serif);font-size:15px;color:var(--text)}
+.dp-field span.empty{color:var(--text3);font-style:italic;font-size:12px}
+.reel-item{background:var(--surface2);border:none;border-left:3px solid var(--gold);border-radius:0;padding:11px 13px;margin-bottom:6px;display:flex;align-items:center;justify-content:space-between}
+.ri-left{display:flex;flex-direction:column;gap:3px}
+.ri-bc{font-family:var(--mono);font-size:12px;color:var(--gold)}
+.ri-title{font-family:var(--mono);font-size:12px;color:var(--text2);letter-spacing:.5px}
+.ri-status.in{font-family:var(--mono);font-size:12px;color:var(--green);letter-spacing:1px}
+.ri-status.out{font-family:var(--mono);font-size:12px;color:var(--red);letter-spacing:1px}
+.checkout-info{font-family:var(--mono);font-size:11px;color:var(--text3)}
+.btn-checkout{background:var(--text);border:1px solid var(--text);color:#fff;border-radius:0;padding:7px 13px;font-family:var(--mono);font-size:10px;font-weight:700;cursor:pointer;letter-spacing:1px;white-space:nowrap}
+.btn-checkin{background:var(--green);border:1px solid var(--green);color:#fff;border-radius:0;padding:7px 13px;font-family:var(--mono);font-size:10px;font-weight:700;cursor:pointer;letter-spacing:1px;white-space:nowrap}
+.scan-area{position:relative;width:100%;aspect-ratio:1;background:#000;overflow:hidden}
+#scan-video{width:100%;height:100%;object-fit:cover}
+.scan-overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center}
+.scan-box{width:62%;aspect-ratio:1;border:1px solid var(--gold);box-shadow:0 0 0 9999px rgba(0,0,0,.55);position:relative}
+.scan-line{position:absolute;width:80%;height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent);animation:scanline 2s ease-in-out infinite;left:10%}
+@keyframes scanline{0%,100%{top:10%}50%{top:85%}}
+.scan-label{position:absolute;bottom:-24px;left:50%;transform:translateX(-50%);font-family:var(--mono);font-size:9px;color:var(--gold);letter-spacing:2px;white-space:nowrap}
+.scan-status{padding:14px 16px;text-align:center}
+.scan-status p{font-family:var(--mono);color:var(--text2);font-size:12px;letter-spacing:.5px}
+.scan-result{background:var(--surface);margin:0 0 0;border:none;border-top:3px solid var(--gold);border-radius:0;padding:16px}
+.scan-result h3{font-family:var(--mono);color:var(--gold);font-size:11px;margin-bottom:10px;letter-spacing:2px;text-transform:uppercase}
+.manual-scan{padding:10px 12px 14px;display:flex;gap:8px}
+.manual-scan input{flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:0;padding:10px 13px;color:var(--text);font-family:var(--mono);font-size:13px;outline:none;letter-spacing:1px}
+.manual-scan input:focus{border-color:var(--gold3)}
+.manual-scan button{background:var(--text);border:none;color:#fff;border-radius:0;padding:10px 14px;font-family:var(--mono);font-size:11px;font-weight:700;cursor:pointer;letter-spacing:1px}
+#add-view{padding:16px}
+.add-section{margin-bottom:20px}
+.add-section-title{font-family:var(--mono);font-size:9px;color:var(--gold);letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;border-bottom:2px solid var(--gold);padding-bottom:5px}
+.form-field{margin-bottom:10px}
+.form-field label{font-family:var(--mono);font-size:9px;color:var(--text3);letter-spacing:1.5px;text-transform:uppercase;display:block;margin-bottom:5px}
+.form-field input,.form-field select,.form-field textarea{width:100%;background:var(--surface);border:none;border-bottom:1px solid var(--border);border-radius:0;padding:10px 4px;color:var(--text);font-family:var(--mono);font-size:13px;outline:none}
+.form-field input:focus,.form-field select:focus{border-bottom-color:var(--gold)}
+.form-field select option{background:var(--surface2)}
+.form-field textarea{min-height:70px;resize:vertical;font-family:var(--mono)}
+.form-row{display:flex;gap:10px}.form-row .form-field{flex:1}
+.autofill-bar{display:flex;gap:8px;margin-bottom:12px}
+.btn-autofill{background:var(--text);border:none;color:#fff;border-radius:0;padding:11px 16px;font-family:var(--mono);font-size:11px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;letter-spacing:1px;text-transform:uppercase;white-space:nowrap}
+.btn-autofill:disabled{opacity:.4}
+.btn-primary{background:var(--gold);color:#fff;border:none;border-radius:0;padding:14px;width:100%;font-family:var(--mono);font-size:13px;font-weight:700;cursor:pointer;letter-spacing:2px;text-transform:uppercase}
+.autofill-result{background:var(--surface2);border:none;border-left:3px solid var(--green);border-radius:0;padding:10px 13px;margin-bottom:12px;font-family:var(--mono);font-size:11px;color:var(--green);display:none;letter-spacing:.5px}
+.autofill-result.show{display:block}
+.reel-assign-item{background:var(--surface2);border:none;border-left:3px solid var(--border2);border-radius:0;padding:11px 13px;margin-bottom:6px;display:flex;align-items:center;justify-content:space-between;gap:10px}
+.rai-label{font-family:var(--mono);font-size:12px;font-weight:700}
+.rai-bc{font-family:var(--mono);font-size:10px;color:var(--gold);min-width:110px}
+.btn-scan-assign{background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:0;padding:7px 12px;font-family:var(--mono);font-size:10px;cursor:pointer;white-space:nowrap;letter-spacing:.5px}
+.btn-scan-assign.assigned{background:var(--green);border-color:var(--green);color:#fff}
+#inline-scanner{display:none;background:#000;border-radius:2px;overflow:hidden;margin-bottom:12px;position:relative}
+#inline-scanner.show{display:block}
+#inline-video{width:100%;height:200px;object-fit:cover}
+.inline-scan-overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center}
+.inline-scan-box{width:55%;aspect-ratio:2.5;border:1px solid var(--gold);box-shadow:0 0 0 9999px rgba(0,0,0,.6)}
+#stats-view{padding:14px}
+.stat-card{background:var(--surface);border:none;border-bottom:1px solid var(--border);border-radius:0;padding:16px;margin-bottom:0}
+.stat-card h3{font-family:var(--mono);font-size:9px;color:var(--gold);letter-spacing:2px;text-transform:uppercase;margin-bottom:14px;border-bottom:2px solid var(--gold);padding-bottom:5px}
+.stat-row{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--border)}
+.stat-row:last-child{border-bottom:none}
+.sr-label{font-family:var(--mono);font-size:13px;color:var(--text2);letter-spacing:.5px}
+.sr-val{font-family:var(--mono);font-size:15px;font-weight:700;color:var(--gold)}
+.big-stat{text-align:center;padding:8px 0}
+.bs-num{font-family:var(--serif);font-size:44px;font-weight:700;color:var(--gold);line-height:1}
+.bs-label{font-family:var(--mono);font-size:9px;color:var(--text3);margin-top:4px;letter-spacing:1.5px;text-transform:uppercase}
+.big-stats-row{display:flex;gap:10px}.big-stats-row .stat-card{flex:1}
+.genre-bar{margin-bottom:8px}
+.genre-bar-label{display:flex;justify-content:space-between;font-family:var(--mono);font-size:10px;color:var(--text2);margin-bottom:4px;letter-spacing:.5px}
+.genre-bar-track{height:4px;background:var(--surface3);overflow:hidden}
+.genre-bar-fill{height:100%;background:var(--gold);transition:width .5s}
+#modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:200;display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s}
+#modal-overlay.open{opacity:1;pointer-events:all}
+#modal-box{background:var(--surface);border:none;border-top:4px solid var(--gold);padding:20px 18px calc(22px + var(--safe));width:100%;max-width:900px;transform:translateY(30px);transition:transform .2s}
+#modal-overlay.open #modal-box{transform:translateY(0)}
+#modal-box h3{font-family:var(--serif);font-size:20px;font-weight:700;margin-bottom:6px;color:var(--text)}
+.modal-sub{font-family:var(--mono);font-size:11px;color:var(--text3);margin-bottom:16px;letter-spacing:.5px}
+.modal-form-field{margin-bottom:12px}
+.modal-form-field label{font-family:var(--mono);font-size:9px;color:var(--text3);letter-spacing:1.5px;text-transform:uppercase;display:block;margin-bottom:5px}
+.modal-form-field input{width:100%;background:var(--surface2);border:none;border-bottom:2px solid var(--border);border-radius:0;padding:11px 4px;color:var(--text);font-family:var(--mono);font-size:14px;outline:none}
+.modal-form-field input:focus{border-bottom-color:var(--gold)}
+.modal-btns{display:flex;gap:10px;margin-top:16px}
+.modal-btns button{flex:1;padding:13px;border-radius:2px;font-family:var(--mono);font-size:12px;font-weight:700;cursor:pointer;border:1px solid;letter-spacing:1px;text-transform:uppercase}
+.btn-cancel{background:var(--surface2);border-color:var(--border);color:var(--text2)}
+.btn-confirm{background:var(--gold);border-color:var(--gold);color:#fff}
+.btn-confirm-green{background:var(--green);border-color:var(--green);color:#fff}
+#toast{position:fixed;bottom:calc(90px + var(--safe));left:50%;transform:translateX(-50%) translateY(20px);background:var(--text);border:none;border-top:3px solid var(--gold);padding:10px 18px;font-family:var(--mono);font-size:11px;color:#fff;white-space:nowrap;letter-spacing:.5px;opacity:0;transition:opacity .2s,transform .2s;pointer-events:none;z-index:300}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.spinner{display:inline-block;width:12px;height:12px;border:2px solid rgba(200,168,75,.3);border-top-color:var(--gold);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+#loading{position:fixed;inset:0;background:var(--text);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;z-index:500}
+.loading-title{font-family:var(--serif);font-size:24px;font-weight:700;color:#ffffff;letter-spacing:4px}
+.loading-sub{font-family:var(--mono);font-size:10px;color:rgba(255,255,255,0.4);letter-spacing:3px;text-transform:uppercase}
+.film-strip{display:flex;gap:2px}
+.film-frame{width:16px;height:22px;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.2);border-radius:1px;animation:flicker .9s infinite alternate}
+.film-frame:nth-child(2){animation-delay:.18s}.film-frame:nth-child(3){animation-delay:.36s}.film-frame:nth-child(4){animation-delay:.54s}.film-frame:nth-child(5){animation-delay:.72s}
+@keyframes flicker{to{background:var(--gold)}}
+.empty-state{text-align:center;padding:60px 20px;color:var(--text3);font-family:var(--mono);font-size:12px;letter-spacing:.5px}
+#auth-banner{background:var(--surface2);border-left:4px solid var(--gold);border-radius:0;margin:0;padding:12px 16px;font-family:var(--mono);font-size:11px;color:var(--text2);display:flex;align-items:center;justify-content:space-between;gap:12px}
+#auth-banner.hidden{display:none}
+</style>
+</head>
+<body>
+<div id="loading">
+  <div class="film-strip"><div class="film-frame"></div><div class="film-frame"></div><div class="film-frame"></div><div class="film-frame"></div><div class="film-frame"></div></div>
+  <div class="loading-title">McGano Plex</div>
+  <div class="loading-sub" id="loading-sub">Fetching Archive&hellip;</div>
+</div>
+<div id="app">
+  <div id="header">
+    <div><h1>McGano Plex</h1><div class="subtitle">16mm Film Archive</div></div>
+    <div class="hright">
+      <div class="stats" id="header-stats">&mdash;</div>
+      <button class="btn-signin" id="btn-signin" onclick="signIn()" style="display:none">&#9654; Sign In</button>
+      <button class="btn-signout" id="btn-signout" onclick="signOut()" style="display:none">Sign Out</button>
+    </div>
+  </div>
+  <div id="content">
+    <div id="collection-view" class="view active">
+      <div class="sync-bar">
+        <div class="sync-left"><div class="sync-dot" id="sync-dot"></div><span id="sync-label">Loading&hellip;</span></div>
+        <button class="btn-sync" onclick="loadFromSheet()">&#8635; Refresh</button>
+      </div>
+      <div id="auth-banner" class="hidden">
+        <span>Sign in with Google to write new films back to your Sheet.</span>
+        <button class="btn-signin" onclick="signIn()">Sign In</button>
+      </div>
+      <div class="searchbar"><input type="text" id="search-input" placeholder="SEARCH TITLE, DIRECTOR, GENRE&hellip;" autocomplete="off" autocorrect="off" spellcheck="false"></div>
+      <div class="film-list" id="film-list"></div>
+    </div>
+    <div id="scanner-view-wrap" class="view">
+      <div class="scan-area">
+        <video id="scan-video" playsinline autoplay muted></video>
+        <div class="scan-overlay"><div class="scan-box"><div class="scan-line"></div><div class="scan-label">SCAN REEL BARCODE</div></div></div>
+      </div>
+      <div class="manual-scan">
+        <input type="text" id="manual-bc-input" placeholder="TYPE OR SCAN BARCODE&hellip;" autocomplete="off" autocorrect="off" spellcheck="false">
+        <button onclick="lookupBarcode(document.getElementById('manual-bc-input').value)">LOOK UP</button>
+      </div>
+      <div class="scan-status" id="scan-status"><p>Point camera at reel barcode &mdash; or use Tera scanner</p></div>
+      <div id="scan-result" class="scan-result" style="display:none"></div>
+    </div>
+    <div id="add-view" class="view">
+      <div class="add-section">
+        <div class="add-section-title">Film Information</div>
+        <div class="form-field"><label>Title *</label><input type="text" id="add-title" placeholder="e.g. THE GODFATHER" autocomplete="off" autocorrect="off" spellcheck="false" style="text-transform:uppercase"></div>
+        <div class="autofill-bar"><button class="btn-autofill" id="btn-autofill" onclick="doAutoFill()">&#9654; Auto-Fill from TMDB</button></div>
+        <div class="autofill-result" id="autofill-result"></div>
+        <input type="hidden" id="add-poster-input" value="">
+        <div id="add-poster-wrap" style="margin-bottom:12px;display:flex;align-items:flex-start;gap:12px">
+          <img id="add-poster-preview" src="" style="display:none;width:80px;border-radius:2px;border:1px solid var(--border2)">
+        </div>
+        <div class="form-row">
+          <div class="form-field"><label>Director</label><input type="text" id="add-director" autocomplete="off"></div>
+          <div class="form-field"><label>Year</label><input type="number" id="add-year" placeholder="1979"></div>
+        </div>
+        <div class="form-row">
+          <div class="form-field"><label>Genre</label><input type="text" id="add-genre" placeholder="DRAMA, THRILLER" autocomplete="off"></div>
+          <div class="form-field"><label>RT Score</label><input type="text" id="add-rt" placeholder="94%" autocomplete="off"></div>
+        </div>
+        <div class="form-row">
+          <div class="form-field"><label>Distributor</label><input type="text" id="add-distributor" autocomplete="off"></div>
+          <div class="form-field"><label>Language</label><input type="text" id="add-language" value="ENGLISH" autocomplete="off"></div>
+        </div>
+      </div>
+      <div class="add-section">
+        <div class="add-section-title">Physical Details</div>
+        <div class="form-row">
+          <div class="form-field"><label>Format</label><select id="add-format"><option value="">&#8212;</option><option>FLAT</option><option>SCOPE</option><option>FLAT (ADAPTED FOR TV)</option><option>SCOPE (ADAPTED FOR TV)</option></select></div>
+          <div class="form-field"><label>Color / B&amp;W</label><select id="add-color"><option value="">&#8212;</option><option>COLOR</option><option>BLACK &amp; WHITE</option><option>COLOR (FADED)</option><option>EASTMAN COLOR</option><option>TECHNICOLOR</option></select></div>
+        </div>
+        <div class="form-row">
+          <div class="form-field"><label>Film Stock</label><input type="text" id="add-stock" placeholder="KODAK LPP" autocomplete="off"></div>
+          <div class="form-field"><label>Aspect Ratio</label><input type="text" id="add-ar" placeholder="1.85:1" autocomplete="off"></div>
+        </div>
+        <div class="form-row">
+          <div class="form-field"><label>Number of Reels *</label><input type="number" id="add-reelcount" placeholder="2" min="1" max="20" oninput="updateReelAssign()"></div>
+          <div class="form-field"><label>Year Obtained</label><input type="number" id="add-yearobtained" placeholder="2025"></div>
+        </div>
+        <div class="form-row">
+          <div class="form-field"><label>Canned</label><select id="add-canned"><option value="">&#8212;</option><option>YES</option><option>NO</option></select></div>
+          <div class="form-field"><label>Serviced</label><select id="add-serviced"><option value="">&#8212;</option><option>YES</option><option>NO</option></select></div>
+        </div>
+
+        <div class="form-field"><label>Inspection Notes</label><textarea id="add-inspect" placeholder="Splices, condition notes&hellip;"></textarea></div>
+        <div class="form-field"><label>Notes</label><textarea id="add-notes" placeholder="Additional notes&hellip;"></textarea></div>
+      </div>
+      <div class="add-section" id="reel-assign-section" style="display:none">
+        <div class="add-section-title">Assign Reel Barcodes</div>
+        <div id="inline-scanner"><video id="inline-video" playsinline autoplay muted></video><div class="inline-scan-overlay"><div class="inline-scan-box"></div></div></div>
+        <div id="reel-assign-list"></div>
+      </div>
+      <button class="btn-primary" onclick="saveFilm()">Add to Archive</button>
+      <div style="height:30px"></div>
+    </div>
+    <div id="stats-view" class="view">
+      <div style="height:14px"></div>
+      <div class="big-stats-row">
+        <div class="stat-card"><div class="big-stat"><div class="bs-num" id="stat-total">&#8212;</div><div class="bs-label">Total Films</div></div></div>
+        <div class="stat-card"><div class="big-stat"><div class="bs-num" id="stat-reels">&#8212;</div><div class="bs-label">Total Reels</div></div></div>
+      </div>
+      <div class="stat-card">
+        <h3>Collection</h3>
+        <div class="stat-row"><span class="sr-label">In Archive</span><span class="sr-val" id="stat-in"></span></div>
+        <div class="stat-row"><span class="sr-label">Reels Checked Out</span><span class="sr-val" id="stat-out" style="color:var(--red)"></span></div>
+        <div class="stat-row"><span class="sr-label">Screened</span><span class="sr-val" id="stat-screened"></span></div>
+        <div class="stat-row"><span class="sr-label">Unique Directors</span><span class="sr-val" id="stat-dirs"></span></div>
+        <div class="stat-row"><span class="sr-label">Avg RT Score</span><span class="sr-val" id="stat-rt"></span></div>
+      </div>
+      <div class="stat-card"><h3>Top Genres</h3><div id="stat-genres"></div></div>
+      <div class="stat-card"><h3>By Decade</h3><div id="stat-decades"></div></div>
+    </div>
+  </div>
+  <div id="tabbar">
+    <div class="tab active" data-view="collection-view" onclick="switchTab('collection-view',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="7" height="7" rx=".5"/><rect x="14" y="3" width="7" height="7" rx=".5"/><rect x="3" y="14" width="7" height="7" rx=".5"/><rect x="14" y="14" width="7" height="7" rx=".5"/></svg>Archive
+    </div>
+    <div class="tab" data-view="scanner-view-wrap" onclick="switchTab('scanner-view-wrap',this);initScanner()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 7V5a2 2 0 012-2h2M17 3h2a2 2 0 012 2v2M21 17v2a2 2 0 01-2 2h-2M7 21H5a2 2 0 01-2-2v-2"/><line x1="7" y1="12" x2="17" y2="12"/></svg>Scan
+    </div>
+    <div class="tab" data-view="add-view" onclick="switchTab('add-view',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>Add Film
+    </div>
+    <div class="tab" data-view="stats-view" onclick="switchTab('stats-view',this);renderStats()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>Stats
+    </div>
+  </div>
+</div>
+<div id="detail-panel">
+  <div class="dp-header">
+    <div class="dp-back" onclick="closeDetail()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>Back</div>
+    <h2 id="dp-title">&#8212;</h2>
+  </div>
+  <div class="dp-body" id="dp-body"></div>
+</div>
+<div id="modal-overlay" onclick="closeModalIfBg(event)">
+  <div id="modal-box">
+    <h3 id="modal-title"></h3>
+    <div class="modal-sub" id="modal-sub"></div>
+    <div id="modal-content"></div>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+      <button class="btn-confirm" id="modal-confirm-btn" onclick="confirmModal()">Confirm</button>
+    </div>
+  </div>
+</div>
+<div id="toast"></div>
+<script>
+const CLIENT_ID='1029385927428-qe0e0ptjus8dog7m18uosl3u2i4triq7.apps.googleusercontent.com';
+const SHEET_ID='1uRCOK_3i2w4gE4652NLzub9KZ_QMHWf20k0VVIAiTCA';
+const SCOPES='https://www.googleapis.com/auth/spreadsheets';
+let DB={features:[],reels:[]};
+let POSTER_CACHE={}; // filmId -> full poster URL
+const TMDB_IMG='https://image.tmdb.org/t/p/';
+const TMDB_KEY='47d88e6f040600fdc8db685edc6fcf08';
+let filteredFeatures=[];
+let accessToken=null,tokenExpiry=0,tokenClient=null;
+let scanStream=null,inlineScanStream=null,barcodeDetectInterval=null;
+let currentDetailFilm=null,modalAction=null,modalReel=null;
+let reelAssignments={},assigningReelIndex=null;
+
+document.addEventListener('DOMContentLoaded',()=>{
+  document.getElementById('add-yearobtained').value=new Date().getFullYear();
+  loadFromSheet();
+  setTimeout(loadGoogleAuth,2000);
+});
+
+async function loadFromSheet(){
+  setSyncStatus('busy','Fetching from Sheet\u2026');
+  try{
+    const fURL='https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=out:json&sheet=Features';
+    const rURL='https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=out:json&sheet=Reel%20Tracker';
+    const [fRes,rRes]=await Promise.all([fetch(fURL),fetch(rURL)]);
+    if(!fRes.ok||!rRes.ok) throw new Error('Sheet fetch failed');
+    const fText=await fRes.text();
+    const rText=await rRes.text();
+    const fJson=JSON.parse(fText.replace(/^[^(]+\(/,'').replace(/\);\s*$/,''));
+    const rJson=JSON.parse(rText.replace(/^[^(]+\(/,'').replace(/\);\s*$/,''));
+    DB.features=parseFeatures(fJson);
+    DB.reels=parseReels(rJson);
+    const now=new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
+    setSyncStatus('live',DB.features.length+' films \u00b7 synced '+now);
+    render();
+    document.getElementById('loading').style.display='none';
+    fetchPostersInBackground();
+  }catch(e){
+    document.getElementById('loading-sub').textContent='ERROR: '+e.message;
+    setSyncStatus('error','Sheet unavailable');
+    setTimeout(()=>document.getElementById('loading').style.display='none',3000);
+  }
+}
+
+function cv(row,i){const c=row.c&&row.c[i];if(!c||c.v===null||c.v===undefined)return '';return String(c.v).trim().replace(/\.0$/,'');}
+function parseFeatures(json){
+  return(json.table.rows||[]).map((row,i)=>{
+    const title=cv(row,0);if(!title||title==='TITLE')return null;
+    return{id:cv(row,24)||('16MM-'+String(i+1).padStart(4,'0')),title,distributor:cv(row,1),year:cv(row,2),language:cv(row,3),genre:cv(row,4),director:cv(row,5),rtScore:cv(row,7),filmStock:cv(row,8),format:cv(row,9),color:cv(row,10),reels:cv(row,11),aspectRatio:cv(row,12),canned:cv(row,14),yearObtained:cv(row,15),serviced:cv(row,16),inspectionNotes:cv(row,17),notes:cv(row,18),previousCollector:cv(row,19),priceBought:cv(row,20),screened:cv(row,21),highestSold:cv(row,22),status:cv(row,25)||'IN ARCHIVE',checkedOutTo:cv(row,26),dateOut:cv(row,27),dateIn:cv(row,28),scanNotes:cv(row,29)};
+  }).filter(Boolean);
+}
+function parseReels(json){
+  return(json.table.rows||[]).map(row=>{
+    const bc=cv(row,0);if(!bc||bc==='BARCODE ID')return null;
+    return{barcodeId:bc,filmTitle:cv(row,1),reelNum:cv(row,2),status:cv(row,3)||'IN ARCHIVE',checkedOutTo:cv(row,4),dateOut:cv(row,5),dateIn:cv(row,6),phoneEmail:cv(row,7),notes:cv(row,8)};
+  }).filter(Boolean);
+}
+
+async function fetchPostersInBackground(){
+  // Fetch posters for films that don't have one yet, in batches
+  const missing=DB.features.filter(f=>!POSTER_CACHE[f.id]).slice(0,20);
+  if(!missing.length)return;
+  for(const film of missing){
+    try{
+      const r=await fetch('https://api.themoviedb.org/3/search/movie?api_key='+TMDB_KEY+'&query='+encodeURIComponent(film.title)+'&year='+film.year);
+      const d=await r.json();
+      if(d.results&&d.results[0]&&d.results[0].poster_path){
+        POSTER_CACHE[film.id]=TMDB_IMG+'w500'+d.results[0].poster_path;
+        // Refresh any visible cards
+        const card=document.querySelector('[data-film-id="'+film.id+'"]');
+        if(card){const img=card.querySelector('.fc-poster');if(img){img.src=POSTER_CACHE[film.id];img.style.display='block';}}
+      }
+      await new Promise(r=>setTimeout(r,120)); // rate limit
+    }catch(e){}
+  }
+}
+
+function loadGoogleAuth(){
+  const s=document.createElement('script');
+  s.src='https://accounts.google.com/gsi/client';
+  s.onload=initAuth;s.onerror=()=>showSignedOut();
+  document.body.appendChild(s);
+}
+function initAuth(){
+  tokenClient=google.accounts.oauth2.initTokenClient({client_id:CLIENT_ID,scope:SCOPES,callback:onToken});
+  const tok=localStorage.getItem('mp_token');
+  const exp=parseInt(localStorage.getItem('mp_exp')||'0');
+  if(tok&&Date.now()<exp){accessToken=tok;tokenExpiry=exp;showSignedIn();}
+  else showSignedOut();
+}
+function onToken(resp){
+  if(resp.error){showSignedOut();return;}
+  accessToken=resp.access_token;tokenExpiry=Date.now()+(resp.expires_in-60)*1000;
+  localStorage.setItem('mp_token',accessToken);localStorage.setItem('mp_exp',tokenExpiry);
+  showSignedIn();showToast('\u2713 Signed in \u2014 two-way sync enabled');
+}
+function signIn(){if(tokenClient)tokenClient.requestAccessToken();}
+function signOut(){
+  if(accessToken&&window.google)google.accounts.oauth2.revoke(accessToken,()=>{});
+  accessToken=null;tokenExpiry=0;localStorage.removeItem('mp_token');localStorage.removeItem('mp_exp');
+  showSignedOut();showToast('Signed out');
+}
+function isAuthed(){return accessToken&&Date.now()<tokenExpiry;}
+function showSignedIn(){document.getElementById('btn-signin').style.display='none';document.getElementById('btn-signout').style.display='block';document.getElementById('auth-banner').classList.add('hidden');}
+function showSignedOut(){document.getElementById('btn-signin').style.display='block';document.getElementById('btn-signout').style.display='none';document.getElementById('auth-banner').classList.remove('hidden');}
+
+async function sheetsAppend(range,values){
+  if(!isAuthed())throw new Error('Not signed in');
+  const r=await fetch('https://sheets.googleapis.com/v4/spreadsheets/'+SHEET_ID+'/values/'+encodeURIComponent(range)+':append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS',{method:'POST',headers:{Authorization:'Bearer '+accessToken,'Content-Type':'application/json'},body:JSON.stringify({values})});
+  if(!r.ok)throw new Error('Sheets append '+r.status);
+}
+async function sheetsUpdate(range,values){
+  if(!isAuthed())throw new Error('Not signed in');
+  const r=await fetch('https://sheets.googleapis.com/v4/spreadsheets/'+SHEET_ID+'/values/'+encodeURIComponent(range)+'?valueInputOption=USER_ENTERED',{method:'PUT',headers:{Authorization:'Bearer '+accessToken,'Content-Type':'application/json'},body:JSON.stringify({values})});
+  if(!r.ok)throw new Error('Sheets update '+r.status);
+}
+async function sheetsGet(range){
+  const h=isAuthed()?{Authorization:'Bearer '+accessToken}:{};
+  const r=await fetch('https://sheets.googleapis.com/v4/spreadsheets/'+SHEET_ID+'/values/'+encodeURIComponent(range),{headers:h});
+  if(!r.ok)throw new Error('Sheets get '+r.status);
+  return r.json();
+}
+async function writeCheckoutToSheet(reel){
+  if(!isAuthed())return;
+  setSyncStatus('busy','Updating Sheet\u2026');
+  try{
+    const data=await sheetsGet('Reel Tracker!A2:I');
+    const rows=data.values||[];
+    const idx=rows.findIndex(r=>r[0]&&r[0].toUpperCase()===reel.barcodeId.toUpperCase());
+    if(idx===-1)return;
+    await sheetsUpdate('Reel Tracker!A'+(idx+2)+':I'+(idx+2),[[reel.barcodeId,reel.filmTitle,reel.reelNum,reel.status,reel.checkedOutTo,reel.dateOut,reel.dateIn,reel.phoneEmail||'',reel.notes||'']]);
+    setSyncStatus('live','Sheet updated');
+  }catch(e){setSyncStatus('error','Sheet update failed');}
+}
+async function writeFilmToSheet(film,newReels){
+  if(!isAuthed()){showToast('Sign in to sync to Sheet');return;}
+  setSyncStatus('busy','Writing to Sheet\u2026');
+  try{
+    const fRow=[film.title,film.distributor,film.year,film.language,film.genre,film.director,'',film.rtScore,film.filmStock,film.format,film.color,film.reels,film.aspectRatio,'',film.canned,film.yearObtained,film.serviced,film.inspectionNotes,film.notes,film.previousCollector,film.priceBought,film.screened,'','','',film.status,'','','','',film.id];
+    const rRows=newReels.map(r=>[r.barcodeId,r.filmTitle,r.reelNum,r.status,'','','','','']);
+    await sheetsAppend('Features!A2:AD',[fRow]);
+    if(rRows.length)await sheetsAppend('Reel Tracker!A2:I',rRows);
+    setSyncStatus('live','Saved to Sheet');showToast('\u2713 Saved to Google Sheet');
+  }catch(e){setSyncStatus('error','Sheet write failed');showToast('\u26a0 '+e.message);}
+}
+
+function setSyncStatus(state,label){
+  const dot=document.getElementById('sync-dot');const lbl=document.getElementById('sync-label');
+  if(dot)dot.className='sync-dot'+(state==='live'?' live':state==='error'?' error':state==='busy'?' busy':'');
+  if(lbl)lbl.textContent=label;
+}
+function switchTab(viewId,el){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById(viewId).classList.add('active');el.classList.add('active');
+  if(viewId!=='scanner-view-wrap'&&scanStream)stopScanner();
+}
+function updateHeaderStats(){
+  const out=DB.reels.filter(r=>r.status!=='IN ARCHIVE').length;
+  document.getElementById('header-stats').textContent=DB.features.length+' films \u00b7 '+DB.reels.length+' reels'+(out?' \u00b7 '+out+' out':'');
+}
+function render(){filteredFeatures=[...DB.features];renderFilmList();updateHeaderStats();}
+function renderFilmList(query){
+  const q=(query||'').toLowerCase().trim();
+  filteredFeatures=q?DB.features.filter(f=>(f.title||'').toLowerCase().includes(q)||(f.director||'').toLowerCase().includes(q)||(f.genre||'').toLowerCase().includes(q)||(f.year||'').includes(q)||(f.id||'').toLowerCase().includes(q)):[...DB.features];
+  const c=document.getElementById('film-list');
+  if(!filteredFeatures.length){c.innerHTML='<div class="empty-state">No films found</div>';return;}
+  c.innerHTML=filteredFeatures.map(f=>{
+    const outCount=DB.reels.filter(r=>r.filmTitle===f.title&&r.status!=='IN ARCHIVE').length;
+    const reelCount=DB.reels.filter(r=>r.filmTitle===f.title).length;
+    const stag=outCount>0?'<span class="tag status-out">'+outCount+' REEL'+(outCount>1?'S':'')+' OUT</span>':'<span class="tag status-in">IN ARCHIVE</span>';
+    return '<div class="film-card" onclick="openDetail(\''+esc(f.id)+'\')">'+
+      '<div class="fc-top"><div class="fc-title">'+esc(f.title)+'</div><div class="fc-id">'+esc(f.id)+'</div></div>'+
+      '<div class="fc-director">'+(f.director||'\u2014')+' \u00b7 '+(f.year||'\u2014')+'</div>'+
+      '<div class="fc-meta">'+
+      (f.genre?f.genre.split(',').slice(0,2).map(g=>'<span class="tag">'+esc(g.trim())+'</span>').join(''):'')+
+      (f.rtScore?'<span class="tag rt">&#127813; '+esc(f.rtScore)+'</span>':'')+
+      (reelCount?'<span class="tag">'+reelCount+' reel'+(reelCount>1?'s':'')+'</span>':'')+
+      stag+'</div></div>';
+  }).join('');
+}
+document.getElementById('search-input').addEventListener('input',e=>renderFilmList(e.target.value));
+
+function openDetail(filmId){
+  const film=DB.features.find(f=>f.id===filmId);if(!film)return;
+  currentDetailFilm=film;document.getElementById('dp-title').textContent=film.title;
+  const reels=DB.reels.filter(r=>r.filmTitle===film.title);
+  const fld=(label,val)=>'<div class="dp-field"><label>'+label+'</label><span class="'+((!val||val==='')?'empty':'')+'">'+((!val||val==='')?'\u2014':esc(val))+'</span></div>';
+  const dposter=POSTER_CACHE[film.id];
+  let html='<div style="display:flex;gap:16px;margin-bottom:16px;align-items:flex-start">';
+  html+='<div style="flex-shrink:0">';
+  if(dposter){html+='<img src="'+dposter+'" style="width:100px;border-radius:3px;border:1px solid var(--border2);display:block" onerror="this.style.display=\'none\'">';}
+  else{html+='<div style="width:100px;height:150px;background:var(--surface3);border:1px solid var(--border);border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:32px">&#9654;</div>';}
+  html+='</div><div style="flex:1"><div class="dp-id">'+esc(film.id)+'</div>';
+  html+='<div style="font-family:var(--serif);font-size:18px;font-weight:700;line-height:1.3;margin-bottom:6px">'+esc(film.title)+'</div>';
+  html+='<div style="font-family:var(--mono);font-size:11px;color:var(--text3);margin-bottom:10px">'+(film.director||'')+(film.year?' · '+film.year:'')+'</div>';
+  if(film.rtScore)html+='<span class="tag rt" style="font-size:12px">&#127813; '+esc(film.rtScore)+'</span>';
+  html+='</div></div>';
+  html+='<div class="dp-section"><div class="dp-section-title">Film</div>';
+  html+='<div class="dp-row">'+fld('Director',film.director)+fld('Year',film.year)+'</div>';
+  html+='<div class="dp-row">'+fld('Genre',film.genre)+fld('RT Score',film.rtScore)+'</div>';
+  html+='<div class="dp-row">'+fld('Distributor',film.distributor)+fld('Language',film.language)+'</div></div>';
+  html+='<div class="dp-section"><div class="dp-section-title">Physical</div>';
+  html+='<div class="dp-row">'+fld('Format',film.format)+fld('Color',film.color)+'</div>';
+  html+='<div class="dp-row">'+fld('Film Stock',film.filmStock)+fld('Aspect Ratio',film.aspectRatio)+'</div>';
+  html+='<div class="dp-row">'+fld('Reels',film.reels)+fld('Canned',film.canned)+'</div>';
+  html+='<div class="dp-row">'+fld('Obtained',film.yearObtained)+fld('Serviced',film.serviced)+'</div>';
+  if(film.inspectionNotes)html+='<div class="dp-row">'+fld('Inspection Notes',film.inspectionNotes)+'</div>';
+  if(film.notes)html+='<div class="dp-row">'+fld('Notes',film.notes)+'</div>';
+  html+='</div><div class="dp-section"><div class="dp-section-title">Acquisition</div>';
+  
+  html+='<div class="dp-row">'+fld('Screened',film.screened)+'</div></div>';
+  if(reels.length>0){
+    html+='<div class="dp-section"><div class="dp-section-title">Reels ('+reels.length+')</div>';
+    reels.forEach(r=>{
+      const isOut=r.status!=='IN ARCHIVE';
+      html+='<div class="reel-item"><div class="ri-left"><div class="ri-bc">'+esc(r.barcodeId)+'</div><div class="ri-title">Reel '+r.reelNum+'</div>'+(isOut?'<div class="checkout-info">'+esc(r.checkedOutTo||'\u2014')+' \u00b7 '+esc(r.dateOut||'\u2014')+'</div>':'')+'</div>'+
+        '<div style="display:flex;align-items:center;gap:10px"><span class="ri-status '+(isOut?'out':'in')+'">'+(isOut?'OUT':'IN')+'</span>'+
+        (isOut?'<button class="btn-checkin" onclick="checkIn(\''+esc(r.barcodeId)+'\')">CHECK IN</button>':'<button class="btn-checkout" onclick="checkOut(\''+esc(r.barcodeId)+'\')">CHECK OUT</button>')+
+        '</div></div>';
+    });html+='</div>';
+  }
+  document.getElementById('dp-body').innerHTML=html;
+  document.getElementById('detail-panel').classList.add('open');
+}
+function closeDetail(){document.getElementById('detail-panel').classList.remove('open');setTimeout(()=>{currentDetailFilm=null;},300);}
+
+async function initScanner(){
+  if(scanStream)return;
+  document.getElementById('scan-status').innerHTML='<p>Starting camera\u2026</p>';
+  try{
+    scanStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment',width:{ideal:1280},height:{ideal:720}}});
+    const v=document.getElementById('scan-video');v.srcObject=scanStream;await v.play();
+    document.getElementById('scan-status').innerHTML='<p>Camera active \u2014 point at reel barcode</p>';
+    if('BarcodeDetector' in window){
+      const det=new BarcodeDetector({formats:['code_128','code_39','qr_code','ean_13','ean_8','code_93']});
+      let last='',lastT=0;
+      barcodeDetectInterval=setInterval(async()=>{
+        if(v.readyState!==4)return;
+        try{const bc=await det.detect(v);if(bc.length>0){const code=bc[0].rawValue;const now=Date.now();if(code!==last||now-lastT>3000){last=code;lastT=now;lookupBarcode(code);}}}catch(e){}
+      },400);
+    }
+  }catch(e){document.getElementById('scan-status').innerHTML='<p style="color:var(--red)">Camera access denied \u2014 use manual entry</p>';}
+}
+function stopScanner(){if(scanStream){scanStream.getTracks().forEach(t=>t.stop());scanStream=null;}if(barcodeDetectInterval){clearInterval(barcodeDetectInterval);barcodeDetectInterval=null;}}
+function lookupBarcode(code){
+  if(!code||!code.trim())return;
+  code=code.trim().toUpperCase();
+  document.getElementById('scan-result').style.display='block';
+  const reel=DB.reels.find(r=>r.barcodeId.toUpperCase()===code);
+  if(reel){
+    const isOut=reel.status!=='IN ARCHIVE';
+    const film=DB.features.find(f=>f.title===reel.filmTitle);
+    document.getElementById('scan-result').innerHTML='<h3>&#9632; Reel Found</h3>'+
+      '<div style="font-family:var(--mono);font-size:10px;color:var(--gold);margin-bottom:6px">'+esc(reel.barcodeId)+'</div>'+
+      '<div style="font-family:var(--serif);font-size:16px;font-weight:600;margin-bottom:8px">'+esc(reel.filmTitle)+'</div>'+
+      '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">'+
+      '<span class="tag">Reel '+reel.reelNum+'</span>'+
+      '<span class="tag '+(isOut?'status-out':'status-in')+'">'+(isOut?'OUT':'IN ARCHIVE')+'</span>'+
+      (isOut&&reel.checkedOutTo?'<span class="tag">\u2192 '+esc(reel.checkedOutTo)+'</span>':'')+
+      '</div><div style="display:flex;gap:8px">'+
+      (!isOut?'<button class="btn-checkout" style="flex:1;padding:12px" onclick="checkOut(\''+esc(reel.barcodeId)+'\')">CHECK OUT</button>':'<button class="btn-checkin" style="flex:1;padding:12px" onclick="checkIn(\''+esc(reel.barcodeId)+'\')">CHECK IN</button>')+
+      (film?'<button class="btn-checkout" style="flex:1;padding:12px;background:var(--surface3)" onclick="closeScanner();openDetail(\''+esc(film.id)+'\')">VIEW FILM</button>':'')+
+      '</div>';
+    document.getElementById('scan-status').innerHTML='<p style="color:var(--green)">\u2713 Barcode recognised</p>';return;
+  }
+  document.getElementById('scan-result').innerHTML='<h3 style="color:var(--red)">Not Found</h3><div style="font-family:var(--mono);font-size:11px;color:var(--text2)">'+esc(code)+'</div><div style="font-family:var(--mono);font-size:10px;color:var(--text3);margin-top:6px">Not yet in the archive.</div>';
+  document.getElementById('scan-status').innerHTML='<p style="color:var(--red)">No match found</p>';
+}
+function closeScanner(){const t=document.querySelector('[data-view="collection-view"]');switchTab('collection-view',t);t.classList.add('active');stopScanner();}
+
+function checkOut(barcodeId){
+  const reel=DB.reels.find(r=>r.barcodeId===barcodeId);if(!reel)return;
+  modalAction='checkout';modalReel=reel;
+  document.getElementById('modal-title').textContent='Check Out Reel';
+  document.getElementById('modal-sub').textContent=reel.barcodeId+' \u2014 '+reel.filmTitle+' Reel '+reel.reelNum;
+  document.getElementById('modal-content').innerHTML='<div class="modal-form-field"><label>Checked Out To *</label><input type="text" id="modal-name" placeholder="Name" autocomplete="off"></div><div class="modal-form-field"><label>Maintenance / Notes</label><input type="text" id="modal-notes" placeholder="e.g. Inspection\u2026" autocomplete="off"></div>';
+  document.getElementById('modal-confirm-btn').className='btn-confirm';document.getElementById('modal-confirm-btn').textContent='Check Out';
+  openModal();setTimeout(()=>document.getElementById('modal-name')?.focus(),300);
+}
+function checkIn(barcodeId){
+  const reel=DB.reels.find(r=>r.barcodeId===barcodeId);if(!reel)return;
+  modalAction='checkin';modalReel=reel;
+  document.getElementById('modal-title').textContent='Check In Reel';
+  document.getElementById('modal-sub').textContent=reel.barcodeId+' \u2014 '+reel.filmTitle+' Reel '+reel.reelNum;
+  document.getElementById('modal-content').innerHTML='<div style="font-family:var(--mono);font-size:11px;color:var(--text2);margin-bottom:8px">Checked out to: <strong style="color:var(--text)">'+esc(reel.checkedOutTo||'\u2014')+'</strong></div><div style="font-family:var(--mono);font-size:11px;color:var(--text3);margin-bottom:14px">Date out: '+esc(reel.dateOut||'\u2014')+'</div><div class="modal-form-field"><label>Condition Notes</label><input type="text" id="modal-notes" placeholder="Optional\u2026" autocomplete="off"></div>';
+  document.getElementById('modal-confirm-btn').className='btn-confirm-green';document.getElementById('modal-confirm-btn').textContent='Check In';
+  openModal();
+}
+function confirmModal(){
+  if(!modalReel)return;
+  const today=new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+  if(modalAction==='checkout'){
+    const name=document.getElementById('modal-name')?.value?.trim();
+    if(!name){showToast('Enter a name');return;}
+    const notes=document.getElementById('modal-notes')?.value?.trim();
+    modalReel.status='CHECKED OUT';modalReel.checkedOutTo=name;modalReel.dateOut=today;modalReel.dateIn='';
+    if(notes)modalReel.notes=notes;
+    showToast('\u2713 '+modalReel.barcodeId+' checked out to '+name);
+  }else{
+    const notes=document.getElementById('modal-notes')?.value?.trim();
+    modalReel.status='IN ARCHIVE';modalReel.dateIn=today;
+    if(notes)modalReel.notes=(modalReel.notes?modalReel.notes+' | ':'')+'Return: '+notes;
+    modalReel.checkedOutTo='';modalReel.dateOut='';
+    showToast('\u2713 '+modalReel.barcodeId+' checked in');
+  }
+  const anyOut=DB.reels.filter(r=>r.filmTitle===modalReel.filmTitle).some(r=>r.status!=='IN ARCHIVE');
+  const film=DB.features.find(f=>f.title===modalReel.filmTitle);
+  if(film)film.status=anyOut?'CHECKED OUT':'IN ARCHIVE';
+  writeCheckoutToSheet(modalReel);
+  closeModal();updateHeaderStats();renderFilmList(document.getElementById('search-input').value);
+  if(currentDetailFilm){const u=DB.features.find(f=>f.id===currentDetailFilm.id);if(u)openDetail(u.id);}
+  if(modalReel)lookupBarcode(modalReel.barcodeId);
+}
+
+function getNextId(){const ids=DB.features.map(f=>{const m=f.id.match(/16MM-(\d+)/);return m?parseInt(m[1]):0;});return '16MM-'+String(Math.max(0,...ids)+1).padStart(4,'0');}
+async function doAutoFill(){
+  const title=document.getElementById('add-title').value.trim();if(!title){showToast('Enter a title first');return;}
+  const btn=document.getElementById('btn-autofill');btn.disabled=true;btn.innerHTML='<span class="spinner"></span> Searching\u2026';
+  const res=document.getElementById('autofill-result');res.className='autofill-result';
+  try{
+    const r=await fetch('https://api.themoviedb.org/3/search/movie?api_key='+TMDB_KEY+'&query='+encodeURIComponent(title));
+    const d=await r.json();
+    if(d.results&&d.results.length>0){
+      const m=d.results[0];
+      const dr=await fetch('https://api.themoviedb.org/3/movie/'+m.id+'?api_key='+TMDB_KEY+'&append_to_response=credits');
+      const dd=await dr.json();
+      const dir=dd.credits?.crew?.find(c=>c.job==='Director');
+      const year=m.release_date?m.release_date.slice(0,4):'';
+      const genres=dd.genres?.map(g=>g.name.toUpperCase()).join(', ')||'';
+      const score=m.vote_average?Math.round(m.vote_average*10)+'%':'';
+      if(dir?.name)document.getElementById('add-director').value=dir.name.toUpperCase();
+      if(year)document.getElementById('add-year').value=year;
+      if(genres)document.getElementById('add-genre').value=genres;
+      if(score)document.getElementById('add-rt').value=score;
+      if(dd.poster_path){document.getElementById('add-poster-preview').src=TMDB_IMG+'w185'+dd.poster_path;document.getElementById('add-poster-preview').style.display='block';document.getElementById('add-poster-input').value=dd.poster_path;}
+      res.textContent='\u2713 Found: '+dd.title+' ('+(year||'?')+') \u2014 '+(dir?.name||'Unknown director');
+      res.className='autofill-result show';
+    }else{res.textContent='\u26a0 Not found on TMDB';res.style.color='var(--text2)';res.className='autofill-result show';}
+  }catch(e){res.textContent='\u26a0 TMDB lookup failed';res.style.color='var(--red)';res.className='autofill-result show';}
+  btn.disabled=false;btn.innerHTML='&#9654; Auto-Fill from TMDB';
+}
+function updateReelAssign(){
+  const count=parseInt(document.getElementById('add-reelcount').value)||0;
+  const section=document.getElementById('reel-assign-section');const list=document.getElementById('reel-assign-list');
+  if(count<1){section.style.display='none';reelAssignments={};return;}
+  section.style.display='block';reelAssignments={};list.innerHTML='';
+  for(let i=1;i<=count;i++){
+    reelAssignments[i]='';
+    const item=document.createElement('div');item.className='reel-assign-item';
+    item.innerHTML='<div class="rai-label">Reel '+i+' of '+count+'</div><div class="rai-bc" id="reel-bc-'+i+'">NOT ASSIGNED</div><button class="btn-scan-assign" id="reel-scan-btn-'+i+'" onclick="startReelAssign('+i+')">SCAN BARCODE</button>';
+    list.appendChild(item);
+  }
+}
+async function startReelAssign(idx){
+  assigningReelIndex=idx;document.getElementById('inline-scanner').className='show';
+  if(!inlineScanStream){
+    try{
+      inlineScanStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});
+      const v=document.getElementById('inline-video');v.srcObject=inlineScanStream;await v.play();
+      if('BarcodeDetector' in window){
+        const det=new BarcodeDetector({formats:['code_128','code_39','qr_code','ean_13','ean_8']});
+        let last=null;
+        const iv=setInterval(async()=>{
+          if(!assigningReelIndex){clearInterval(iv);return;}if(v.readyState!==4)return;
+          try{const bc=await det.detect(v);if(bc.length>0){const code=bc[0].rawValue.trim();if(code!==last){last=code;assignBarcodeToReel(code);clearInterval(iv);stopInlineScanner();}}}catch(e){}
+        },400);
+      }
+    }catch(e){showToast('Camera unavailable \u2014 type barcode');const bc=prompt('Enter barcode for Reel '+idx+':');if(bc)assignBarcodeToReel(bc.trim().toUpperCase());stopInlineScanner();}
+  }
+}
+function assignBarcodeToReel(code){
+  if(!assigningReelIndex)return;const i=assigningReelIndex;
+  if(DB.reels.find(r=>r.barcodeId.toUpperCase()===code.toUpperCase())){showToast('\u26a0 '+code+' already assigned');return;}
+  if(Object.values(reelAssignments).find(v=>v.toUpperCase()===code.toUpperCase())){showToast('\u26a0 Already used');return;}
+  reelAssignments[i]=code;
+  const bcEl=document.getElementById('reel-bc-'+i);const btnEl=document.getElementById('reel-scan-btn-'+i);
+  if(bcEl)bcEl.textContent=code;if(btnEl){btnEl.textContent='CHANGE';btnEl.className='btn-scan-assign assigned';}
+  assigningReelIndex=null;showToast('\u2713 Reel '+i+' \u2192 '+code);
+}
+function stopInlineScanner(){if(inlineScanStream){inlineScanStream.getTracks().forEach(t=>t.stop());inlineScanStream=null;}document.getElementById('inline-scanner').className='';assigningReelIndex=null;}
+async function saveFilm(){
+  const title=document.getElementById('add-title').value.trim().toUpperCase();
+  if(!title){showToast('\u26a0 Title required');return;}
+  const reelCount=parseInt(document.getElementById('add-reelcount').value)||0;
+  if(reelCount<1){showToast('\u26a0 Enter number of reels');return;}
+  const unassigned=[];for(let i=1;i<=reelCount;i++){if(!reelAssignments[i])unassigned.push(i);}
+  if(unassigned.length){showToast('\u26a0 Assign barcodes: '+unassigned.join(', '));return;}
+  const newId=getNextId();
+  const posterPath=document.getElementById('add-poster-input').value;
+if(posterPath)POSTER_CACHE[newId]=TMDB_IMG+'w500'+posterPath;
+  const film={id:newId,title,distributor:document.getElementById('add-distributor').value.trim().toUpperCase(),year:document.getElementById('add-year').value.trim(),language:document.getElementById('add-language').value.trim().toUpperCase()||'ENGLISH',genre:document.getElementById('add-genre').value.trim().toUpperCase(),director:document.getElementById('add-director').value.trim().toUpperCase(),rtScore:document.getElementById('add-rt').value.trim(),filmStock:document.getElementById('add-stock').value.trim().toUpperCase(),format:document.getElementById('add-format').value,color:document.getElementById('add-color').value,reels:reelCount+' REEL'+(reelCount>1?'S':''),aspectRatio:document.getElementById('add-ar').value.trim(),canned:document.getElementById('add-canned').value,yearObtained:document.getElementById('add-yearobtained').value,serviced:document.getElementById('add-serviced').value,inspectionNotes:document.getElementById('add-inspect').value.trim().toUpperCase(),notes:document.getElementById('add-notes').value.trim().toUpperCase(),previousCollector:document.getElementById('add-prev').value.trim().toUpperCase(),priceBought:document.getElementById('add-price').value.trim(),screened:'',highestSold:'',status:'IN ARCHIVE',checkedOutTo:'',dateOut:'',dateIn:'',scanNotes:''};
+  const newReels=[];
+  for(let i=1;i<=reelCount;i++)newReels.push({barcodeId:reelAssignments[i],filmTitle:title,reelNum:String(i),status:'IN ARCHIVE',checkedOutTo:'',dateOut:'',dateIn:'',phoneEmail:'',notes:''});
+  DB.features.push(film);DB.reels.push(...newReels);
+  render();showToast('\u2713 '+title+' added ('+newId+')');
+  await writeFilmToSheet(film,newReels);
+  resetAddForm();const t=document.querySelector('[data-view="collection-view"]');switchTab('collection-view',t);
+}
+function resetAddForm(){
+  ['add-title','add-director','add-year','add-genre','add-rt','add-distributor','add-stock','add-ar','add-inspect','add-notes','add-reelcount'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  document.getElementById('add-language').value='ENGLISH';document.getElementById('add-yearobtained').value=new Date().getFullYear();
+  ['add-format','add-color','add-canned','add-serviced'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('reel-assign-section').style.display='none';document.getElementById('autofill-result').className='autofill-result';
+  reelAssignments={};stopInlineScanner();document.getElementById('add-poster-input').value='';document.getElementById('add-poster-preview').style.display='none';document.getElementById('add-poster-preview').src='';
+}
+function renderStats(){
+  const films=DB.features,reels=DB.reels;
+  document.getElementById('stat-total').textContent=films.length;document.getElementById('stat-reels').textContent=reels.length;
+  document.getElementById('stat-in').textContent=films.filter(f=>f.status==='IN ARCHIVE').length;
+  document.getElementById('stat-out').textContent=reels.filter(r=>r.status!=='IN ARCHIVE').length+' reels';
+  document.getElementById('stat-screened').textContent=films.filter(f=>f.screened==='YES').length;
+  document.getElementById('stat-dirs').textContent=new Set(films.map(f=>f.director).filter(Boolean)).size;
+  const scores=films.map(f=>parseInt(f.rtScore)).filter(n=>!isNaN(n));
+  document.getElementById('stat-rt').textContent=scores.length?Math.round(scores.reduce((a,b)=>a+b,0)/scores.length)+'%':'\u2014';
+  const gm={};films.forEach(f=>{if(!f.genre)return;f.genre.split(',').forEach(g=>{const k=g.trim();if(k)gm[k]=(gm[k]||0)+1;});});
+  const tg=Object.entries(gm).sort((a,b)=>b[1]-a[1]).slice(0,8);const mg=tg[0]?.[1]||1;
+  document.getElementById('stat-genres').innerHTML=tg.map(([g,c])=>'<div class="genre-bar"><div class="genre-bar-label"><span>'+esc(g)+'</span><span>'+c+'</span></div><div class="genre-bar-track"><div class="genre-bar-fill" style="width:'+(c/mg*100).toFixed(0)+'%"></div></div></div>').join('');
+  const dm={};films.forEach(f=>{if(!f.year||isNaN(f.year))return;const dec=Math.floor(parseInt(f.year)/10)*10;dm[dec]=(dm[dec]||0)+1;});
+  const decades=Object.entries(dm).sort((a,b)=>a[0]-b[0]);const md=Math.max(...decades.map(d=>d[1]));
+  document.getElementById('stat-decades').innerHTML=decades.map(([d,c])=>'<div class="genre-bar"><div class="genre-bar-label"><span>'+d+'s</span><span>'+c+' film'+(c>1?'s':'')+'</span></div><div class="genre-bar-track"><div class="genre-bar-fill" style="width:'+(c/md*100).toFixed(0)+'%"></div></div></div>').join('');
+}
+function openModal(){document.getElementById('modal-overlay').classList.add('open');}
+function closeModal(){document.getElementById('modal-overlay').classList.remove('open');modalAction=null;modalReel=null;}
+function closeModalIfBg(e){if(e.target===document.getElementById('modal-overlay'))closeModal();}
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2800);}
+function esc(s){if(!s)return '';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
+const manualInput=document.getElementById('manual-bc-input');
+let scanBuffer='',scanTimer=null;
+manualInput.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();const v=manualInput.value.trim();if(v){lookupBarcode(v);manualInput.value='';}}}); 
+document.addEventListener('keypress',e=>{
+  const scanTab=document.getElementById('scanner-view-wrap');
+  if(!scanTab.classList.contains('active'))return;if(document.activeElement===manualInput)return;
+  if(e.key==='Enter'){if(scanBuffer.length>2){lookupBarcode(scanBuffer);scanBuffer='';}clearTimeout(scanTimer);return;}
+  scanBuffer+=e.key;clearTimeout(scanTimer);scanTimer=setTimeout(()=>{scanBuffer='';},100);
+});
+</script>
+</body>
+</html>
