@@ -600,7 +600,8 @@ document.getElementById('search-input').addEventListener('input',e=>renderFilmLi
 
 function openDetail(filmId){
   const film=DB.features.find(f=>f.id===filmId);if(!film)return;
-  currentDetailFilm=film;document.getElementById('dp-title').textContent=film.title;
+  currentDetailFilm=film;
+  document.getElementById('dp-title').textContent=film.title;
   const reels=DB.reels.filter(r=>r.filmTitle===film.title);
   const fld=(label,val)=>'<div class="dp-field"><label>'+label+'</label><span class="'+((!val||val==='')?'empty':'')+'">'+((!val||val==='')?'\u2014':esc(val))+'</span></div>';
   const dposter=POSTER_CACHE[film.id];
@@ -608,7 +609,7 @@ function openDetail(filmId){
   html+='<div style="flex-shrink:0">';
   if(dposter){html+='<img src="'+dposter+'" style="width:100px;border-radius:3px;border:1px solid var(--border2);display:block" onerror="this.style.display=\'none\'">';}
   else{html+='<div style="width:100px;height:150px;background:var(--surface2);border:1px solid var(--border);border-radius:3px;display:flex;align-items:center;justify-content:center;padding:10px"><span style=\"font-family:var(--serif);font-size:11px;font-weight:700;color:var(--text2);text-align:center;line-height:1.3;text-transform:uppercase\">'+esc(film.title)+'</span></div>';}
-  html+='</div><div style="flex:1"><div class="dp-id">'+esc(film.id)+'</div>';
+  html+='</div><div style="flex:1">';
   html+='<div style="font-family:var(--serif);font-size:18px;font-weight:700;line-height:1.3;margin-bottom:6px">'+esc(film.title)+'</div>';
   html+='<div style="font-family:var(--mono);font-size:11px;color:var(--text3);margin-bottom:10px">'+(film.director||'')+(film.year?' · '+film.year:'')+'</div>';
   if(film.rtScore)html+='<span class="tag rt" style="font-size:12px">&#127813; '+esc(film.rtScore)+'</span>';
@@ -627,16 +628,49 @@ function openDetail(filmId){
   html+='</div><div class="dp-section"><div class="dp-section-title">Acquisition</div>';
   
   html+='<div class="dp-row">'+fld('Screened',film.screened)+'</div></div>';
-  if(reels.length>0){
-    html+='<div class="dp-section"><div class="dp-section-title">Reels ('+reels.length+')</div>';
-    reels.forEach(r=>{
-      const isOut=r.status!=='IN ARCHIVE';
-      html+='<div class="reel-item"><div class="ri-left"><div class="ri-bc">'+esc(r.barcodeId)+'</div><div class="ri-title">Reel '+r.reelNum+'</div>'+(isOut?'<div class="checkout-info">'+esc(r.checkedOutTo||'\u2014')+' \u00b7 '+esc(r.dateOut||'\u2014')+'</div>':'')+'</div>'+
-        '<div style="display:flex;align-items:center;gap:10px"><span class="ri-status '+(isOut?'out':'in')+'">'+(isOut?'OUT':'IN')+'</span>'+
-        (isOut?'<button class="btn-checkin" onclick="checkIn(\''+esc(r.barcodeId)+'\')">CHECK IN</button>':'<button class="btn-checkout" onclick="checkOut(\''+esc(r.barcodeId)+'\')">CHECK OUT</button>')+
-        '</div></div>';
-    });html+='</div>';
+  // Parse reel count from reels field e.g. "2 REELS 1600'"
+  const reelCountMatch=(film.reels||'').match(/(\d+)\s*REEL/i);
+  const expectedReels=reelCountMatch?parseInt(reelCountMatch[1]):0;
+
+  html+='<div class="dp-section"><div class="dp-section-title">Reels'+(reels.length>0?' ('+reels.length+')':'')+'</div>';
+  reels.forEach(r=>{
+    const isOut=r.status!=='IN ARCHIVE';
+    const bcDisplay=r.barcodeId?esc(r.barcodeId):'<span style="color:var(--text3);font-style:italic">UNASSIGNED</span>';
+    html+='<div class="reel-item"><div class="ri-left">'+
+      '<div class="ri-bc">'+bcDisplay+'</div>'+
+      '<div class="ri-title">Reel '+r.reelNum+'</div>'+
+      (isOut?'<div class="checkout-info">'+esc(r.checkedOutTo||'\u2014')+' \u00b7 '+esc(r.dateOut||'\u2014')+'</div>':'')+
+      '</div>'+
+      '<div style="display:flex;align-items:center;gap:10px">'+
+      '<span class="ri-status '+(isOut?'out':'in')+'">'+(isOut?'OUT':'IN')+'</span>'+
+      (r.barcodeId
+        ?(isOut
+          ?'<button class="btn-checkin" onclick="checkIn(\'' +esc(r.barcodeId)+ '\')">CHECK IN</button>'
+          :'<button class="btn-checkout" onclick="checkOut(\'' +esc(r.barcodeId)+ '\')">CHECK OUT</button>')
+        :'<button class="btn-scan-assign" onclick="assignBarcodePrompt(\'' +esc(film.id)+ '\',' +r.reelNum+ ')">ASSIGN BARCODE</button>')+
+      '</div></div>';
+  });
+
+  if(reels.length===0){
+    const suggested=expectedReels||2;
+    html+='<div style="background:var(--surface2);border-left:3px solid var(--gold);padding:14px 16px;margin-bottom:8px">';
+    html+='<div style="font-family:var(--mono);font-size:10px;color:var(--text3);margin-bottom:10px">'+
+      'No reels assigned yet'+(expectedReels?' \u2014 '+expectedReels+' reel'+(expectedReels>1?'s':'')+' expected':'')+
+    '</div>';
+    html+='<div style="display:flex;gap:10px;align-items:center;margin-bottom:12px">'+
+      '<span style="font-family:var(--mono);font-size:11px;color:var(--text2)">Number of reels:</span>'+
+      '<input type="number" id="detail-reel-count" value="'+suggested+'" min="1" max="20" '+
+        'style="width:60px;background:var(--surface);border:none;border-bottom:2px solid var(--gold);'+
+        'padding:4px 6px;font-family:var(--mono);font-size:14px;color:var(--text);outline:none">'+
+    '</div>';
+    html+='<button onclick="createReelsForFilm(\'' +esc(film.id)+ '\')" '+
+      'style="background:var(--text);border:none;color:#fff;font-family:var(--mono);'+
+      'font-size:11px;font-weight:700;padding:10px 18px;cursor:pointer;letter-spacing:1px">'+
+      'CREATE REELS &amp; ASSIGN BARCODES'+
+    '</button>';
+    html+='</div>';
   }
+  html+='</div>';
   document.getElementById('dp-body').innerHTML=html;
   document.getElementById('detail-panel').classList.add('open');
 }
@@ -837,6 +871,39 @@ function confirmModal(){
   }
   if(!modalReel)return;
   const today=new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+  if(modalAction==='checkout-all'||modalAction==='checkin-all'){
+    const today=new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+    const reels=window._checkoutAllReels||[];
+    if(modalAction==='checkout-all'){
+      const name=document.getElementById('modal-name')?.value?.trim();
+      if(!name){showToast('Enter a name');return;}
+      const notes=document.getElementById('modal-notes')?.value?.trim();
+      reels.forEach(r=>{
+        r.status='CHECKED OUT';r.checkedOutTo=name;r.dateOut=today;r.dateIn='';
+        if(notes)r.notes=notes;
+        writeCheckoutToSheet(r);
+      });
+      showToast('\u2713 '+reels.length+' reel'+(reels.length>1?'s':'')+' checked out to '+name);
+    } else {
+      const notes=document.getElementById('modal-notes')?.value?.trim();
+      reels.forEach(r=>{
+        r.status='IN ARCHIVE';r.dateIn=today;
+        if(notes)r.notes=(r.notes?r.notes+' | ':'')+'Return: '+notes;
+        r.checkedOutTo='';r.dateOut='';
+        writeCheckoutToSheet(r);
+      });
+      showToast('\u2713 '+reels.length+' reel'+(reels.length>1?'s':'')+' checked in');
+    }
+    // Update parent film status
+    const filmTitle=reels[0].filmTitle;
+    const anyOut=DB.reels.filter(r=>r.filmTitle===filmTitle).some(r=>r.status!=='IN ARCHIVE');
+    const film=DB.features.find(f=>f.title===filmTitle);
+    if(film)film.status=anyOut?'CHECKED OUT':'IN ARCHIVE';
+    closeModal();updateHeaderStats();renderFilmList(document.getElementById('search-input').value);
+    if(currentDetailFilm){const u=DB.features.find(f=>f.id===currentDetailFilm.id);if(u)openDetail(u.id);}
+    if(reels[0])lookupBarcode(reels[0].barcodeId);
+    return;
+  }
   if(modalAction==='checkout'){
     const name=document.getElementById('modal-name')?.value?.trim();
     if(!name){showToast('Enter a name');return;}
