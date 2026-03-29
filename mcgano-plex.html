@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v1.9 -->
+<!-- v2.0 -->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -346,6 +346,12 @@ document.addEventListener('DOMContentLoaded',()=>{
 });
 
 async function loadFromSheet(){
+  // Safety net — hide loading after 6s regardless
+  const loadingTimeout = setTimeout(()=>{
+    document.getElementById('loading').style.display='none';
+    setSyncStatus('error','Sheet timeout \u2014 check connection');
+  }, 6000);
+
   setSyncStatus('busy','Fetching from Sheet\u2026');
   try{
     const fURL='https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=out:json&sheet=Features';
@@ -358,6 +364,7 @@ async function loadFromSheet(){
     const rJson=JSON.parse(rText.replace(/^[^(]+\(/,'').replace(/\);\s*$/,''));
     DB.features=parseFeatures(fJson);
     DB.reels=parseReels(rJson);
+    clearTimeout(loadingTimeout);
     // Load poster URLs from sheet into cache
     DB.features.forEach(f=>{if(f.posterUrl&&f.posterUrl.trim())POSTER_CACHE[f.id]=f.posterUrl.trim();});
     const now=new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
@@ -366,9 +373,10 @@ async function loadFromSheet(){
     document.getElementById('loading').style.display='none';
     fetchPostersInBackground();
   }catch(e){
+    clearTimeout(loadingTimeout);
     document.getElementById('loading-sub').textContent='ERROR: '+e.message;
     setSyncStatus('error','Sheet unavailable');
-    setTimeout(()=>document.getElementById('loading').style.display='none',3000);
+    setTimeout(()=>document.getElementById('loading').style.display='none',1000);
   }
 }
 
@@ -376,8 +384,8 @@ function cv(row,i){const c=row.c&&row.c[i];if(!c||c.v===null||c.v===undefined)re
 function parseFeatures(json){
   return(json.table.rows||[]).map((row,i)=>{
     const title=cv(row,0);if(!title||title==='TITLE')return null;
-    return{
-      id:cv(row,25)||('16MM-'+String(i+1).padStart(4,'0')),
+    try{ return{
+      id:cv(row,25)||cv(row,24)||('16MM-'+String(i+1).padStart(4,'0')),
       title,distributor:cv(row,1),year:cv(row,2),language:cv(row,3),genre:cv(row,4),
       director:cv(row,5),rtScore:cv(row,7),filmStock:cv(row,8),format:cv(row,9),
       color:cv(row,10),reels:cv(row,11),aspectRatio:cv(row,12),canned:cv(row,14),
@@ -388,7 +396,7 @@ function parseFeatures(json){
       highestSold:cv(row,23),
       status:cv(row,26)||'IN ARCHIVE',
       checkedOutTo:cv(row,27),dateOut:cv(row,28),dateIn:cv(row,29),scanNotes:cv(row,30)
-    };
+    };}catch(e){return null;}
   }).filter(Boolean);
 }
 function parseReels(json){
