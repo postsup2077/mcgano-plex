@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.0 -->
+<!-- v2.1 cache-bust-20260329 -->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -385,17 +385,17 @@ function parseFeatures(json){
   return(json.table.rows||[]).map((row,i)=>{
     const title=cv(row,0);if(!title||title==='TITLE')return null;
     try{ return{
-      id:cv(row,25)||cv(row,24)||('16MM-'+String(i+1).padStart(4,'0')),
+      id:cv(row,24)||('16MM-'+String(i+1).padStart(4,'0')),
       title,distributor:cv(row,1),year:cv(row,2),language:cv(row,3),genre:cv(row,4),
       director:cv(row,5),rtScore:cv(row,7),filmStock:cv(row,8),format:cv(row,9),
       color:cv(row,10),reels:cv(row,11),aspectRatio:cv(row,12),canned:cv(row,14),
       yearObtained:cv(row,15),serviced:cv(row,16),inspectionNotes:cv(row,17),
       notes:cv(row,18),
-      posterUrl:cv(row,19),
-      previousCollector:cv(row,20),priceBought:cv(row,21),screened:cv(row,22),
-      highestSold:cv(row,23),
-      status:cv(row,26)||'IN ARCHIVE',
-      checkedOutTo:cv(row,27),dateOut:cv(row,28),dateIn:cv(row,29),scanNotes:cv(row,30)
+      previousCollector:cv(row,19),priceBought:cv(row,20),screened:cv(row,21),
+      highestSold:cv(row,22),
+      posterUrl:cv(row,31),
+      status:cv(row,25)||'IN ARCHIVE',
+      checkedOutTo:cv(row,26),dateOut:cv(row,27),dateIn:cv(row,28),scanNotes:cv(row,29)
     };}catch(e){return null;}
   }).filter(Boolean);
 }
@@ -829,7 +829,7 @@ async function savePosterUrlToSheet(filmId, posterUrl) {
     const idx = rows.findIndex(r => r[0] && r[0].toUpperCase() === film.title.toUpperCase());
     if (idx === -1) { console.warn('Film not found in sheet for poster URL save'); return; }
     const sheetRow = idx + 2;
-    await sheetsUpdate('Features!T'+sheetRow, [[posterUrl]]);
+    await sheetsUpdate('Features!T'+sheetRow, [[posterUrl]]); // Column T
     console.log('Poster URL saved to Sheet row', sheetRow);
   } catch(e) {
     console.warn('Failed to save poster URL to sheet:', e.message);

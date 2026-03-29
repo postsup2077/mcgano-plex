@@ -1,4 +1,4 @@
-const CACHE = 'mcgano-plex-v1';
+const CACHE = 'mcgano-plex-v3';
 const ASSETS = [
   '/mcgano-plex/mcgano-plex.html',
   '/mcgano-plex/manifest.json',
