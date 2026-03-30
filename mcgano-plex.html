@@ -1,0 +1,1541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="McGano Plex">
+<title>McGano Plex Archive</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="theme-color" content="#1a1410">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f5f0e8;--surface:#ffffff;--surface2:#f0ebe0;--surface3:#e8e0d0;
+  --border:#d0c8b8;--border2:#b8ae9e;
+  --text:#1a1410;--text2:#5a4e3e;--text3:#9a8e7e;
+  --gold:#c8102e;--gold3:#a00820;
+  --red:#c8102e;--green:#2a6e3a;
+  --safe:env(safe-area-inset-bottom,0px);
+  --serif:'Playfair Display',Georgia,serif;
+  --mono:'Courier Prime','Courier New',monospace
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:var(--serif)}
+#app{display:flex;flex-direction:column;height:100%;max-width:900px;margin:0 auto}
+#header{background:var(--text);border-bottom:4px solid var(--gold);padding:calc(14px + env(safe-area-inset-top)) 18px 11px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+#header h1{font-family:var(--serif);font-size:20px;font-weight:700;letter-spacing:2px;color:#fff;text-transform:uppercase}
+#header .subtitle{font-family:var(--mono);font-size:9px;color:rgba(255,255,255,0.5);letter-spacing:2px;text-transform:uppercase;margin-top:2px}
+#header .hright{display:flex;flex-direction:column;align-items:flex-end;gap:4px}
+#header .stats{font-family:var(--mono);font-size:10px;color:rgba(255,255,255,0.6);letter-spacing:.5px}
+.btn-signin{background:var(--gold);border:none;color:#fff;border-radius:0;padding:5px 12px;font-family:var(--mono);font-size:9px;font-weight:700;cursor:pointer;letter-spacing:1px;text-transform:uppercase;white-space:nowrap}
+.btn-signout{background:none;border:1px solid rgba(255,255,255,0.3);color:rgba(255,255,255,0.6);border-radius:0;padding:4px 10px;font-family:var(--mono);font-size:9px;cursor:pointer;letter-spacing:.5px}
+#content{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
+#tabbar{background:var(--text);border-top:2px solid var(--gold);display:flex;padding-bottom:var(--safe);flex-shrink:0}
+.tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:10px 4px 9px;cursor:pointer;color:rgba(255,255,255,0.45);font-family:var(--mono);font-size:9px;letter-spacing:1.5px;gap:5px;transition:color .15s;text-transform:uppercase}
+.tab svg{width:20px;height:20px}.tab.active{color:#fff}
+.view{display:none;padding:0 0 20px}.view.active{display:block}
+.sync-bar{background:var(--surface2);border-bottom:1px solid var(--border);padding:7px 16px;display:flex;align-items:center;justify-content:space-between;font-family:var(--mono);font-size:10px;color:var(--text3);letter-spacing:.5px}
+.sync-left{display:flex;align-items:center;gap:6px}
+.sync-dot{width:6px;height:6px;border-radius:50%;background:var(--text3);flex-shrink:0}
+.sync-dot.live{background:var(--green);animation:pulse 2s infinite}
+.sync-dot.error{background:var(--red)}
+.sync-dot.busy{background:var(--gold);animation:pulse .6s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.btn-sync{background:none;border:1px solid var(--border);color:var(--text3);border-radius:0;padding:4px 10px;font-family:var(--mono);font-size:9px;cursor:pointer;letter-spacing:1px}
+.searchbar{padding:12px 16px 10px;position:sticky;top:0;background:var(--bg);z-index:10;border-bottom:1px solid var(--border)}
+.searchbar input{width:100%;background:transparent;border:none;border-bottom:2px solid var(--text);border-radius:0;padding:8px 0;color:var(--text);font-family:var(--serif);font-size:15px;outline:none;letter-spacing:.5px}
+.searchbar input::placeholder{color:var(--text3)}
+.film-list{padding:0 16px;border-top:1px solid var(--border)}
+.film-card{background:var(--surface);border:none;border-bottom:1px solid var(--border);border-radius:0;margin-bottom:0;padding:14px 0;cursor:pointer;transition:background .15s}
+.film-card:active{background:var(--surface2)}
+.fc-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.fc-title{font-family:var(--serif);font-size:17px;font-weight:700;line-height:1.25;flex:1;color:var(--text)}
+.fc-director{font-family:var(--mono);font-size:11px;color:var(--text3);margin-top:5px;letter-spacing:.5px}
+.fc-meta{margin-top:7px;display:flex;flex-wrap:wrap;gap:5px;align-items:center}
+.tag{font-family:var(--mono);font-size:9px;background:transparent;border:1px solid var(--border2);border-radius:20px;padding:2px 8px;color:var(--text2);letter-spacing:.5px;text-transform:uppercase}
+.tag.rt{color:var(--gold);border-color:var(--gold)}
+.tag.status-out{background:var(--gold);color:#fff;border-color:var(--gold)}
+.tag.status-in{color:var(--green);border-color:var(--green)}
+#detail-panel{position:fixed;inset:0;background:var(--bg);z-index:100;display:flex;flex-direction:column;transform:translateX(100%);transition:transform .28s cubic-bezier(.4,0,.2,1)}
+#detail-panel.open{transform:translateX(0)}
+.dp-header{background:var(--text);border-bottom:3px solid var(--gold);padding:calc(14px + env(safe-area-inset-top)) 16px 11px;display:flex;align-items:center;gap:12px;flex-shrink:0}
+.dp-back{color:#fff;font-family:var(--mono);font-size:11px;cursor:pointer;display:flex;align-items:center;gap:4px;letter-spacing:1px;text-transform:uppercase}
+.dp-header h2{font-family:var(--serif);font-size:15px;font-weight:700;flex:1;line-height:1.3;color:#fff}
+.dp-body{overflow-y:auto;flex:1;padding:16px}
+.dp-section{margin-bottom:20px}
+.dp-section-title{font-family:var(--mono);font-size:9px;color:var(--gold);letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;border-bottom:2px solid var(--gold);padding-bottom:5px}
+.dp-row{display:flex;gap:6px;margin-bottom:6px;flex-wrap:wrap}
+.dp-field{background:var(--surface2);border:none;border-left:3px solid var(--border);border-radius:0;padding:8px 11px;flex:1;min-width:120px}
+.dp-field label{font-family:var(--mono);font-size:9px;color:var(--text3);letter-spacing:1.5px;text-transform:uppercase;display:block;margin-bottom:4px}
+.dp-field span{font-family:var(--serif);font-size:14px;color:var(--text)}
+.dp-field span.empty{color:var(--text3);font-style:italic;font-size:12px}
+.reel-item{background:var(--surface2);border:none;border-left:3px solid var(--gold);border-radius:0;padding:11px 13px;margin-bottom:6px;display:flex;align-items:center;justify-content:space-between}
+.ri-left{display:flex;flex-direction:column;gap:3px}
+.ri-bc{font-family:var(--mono);font-size:12px;color:var(--gold);font-weight:700}
+.ri-title{font-family:var(--mono);font-size:10px;color:var(--text2);letter-spacing:.5px}
+.ri-status.in{font-family:var(--mono);font-size:10px;color:var(--green);letter-spacing:1px}
+.ri-status.out{font-family:var(--mono);font-size:10px;color:var(--red);letter-spacing:1px}
+.checkout-info{font-family:var(--mono);font-size:10px;color:var(--text3)}
+.btn-checkout{background:var(--text);border:1px solid var(--text);color:#fff;border-radius:0;padding:7px 13px;font-family:var(--mono);font-size:10px;font-weight:700;cursor:pointer;letter-spacing:1px;white-space:nowrap}
+.btn-checkin{background:var(--green);border:1px solid var(--green);color:#fff;border-radius:0;padding:7px 13px;font-family:var(--mono);font-size:10px;font-weight:700;cursor:pointer;letter-spacing:1px;white-space:nowrap}
+.btn-scan-assign{background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:0;padding:7px 12px;font-family:var(--mono);font-size:10px;cursor:pointer;white-space:nowrap;letter-spacing:.5px}
+.btn-scan-assign.assigned{background:var(--green);border-color:var(--green);color:#fff}
+.scan-area{position:relative;width:100%;aspect-ratio:4/3;background:#000;overflow:hidden}
+#scan-video{width:100%;height:100%;object-fit:cover}
+.scan-overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center}
+.scan-box{width:62%;aspect-ratio:1;border:1px solid var(--gold);box-shadow:0 0 0 9999px rgba(0,0,0,.55);position:relative}
+.scan-line{position:absolute;width:80%;height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent);animation:scanline 2s ease-in-out infinite;left:10%}
+@keyframes scanline{0%,100%{top:10%}50%{top:85%}}
+.scan-label{position:absolute;bottom:-24px;left:50%;transform:translateX(-50%);font-family:var(--mono);font-size:9px;color:var(--gold);letter-spacing:2px;white-space:nowrap}
+.scan-status{padding:14px 16px;text-align:center}
+.scan-status p{font-family:var(--mono);color:var(--text2);font-size:12px;letter-spacing:.5px}
+.scan-result{background:var(--surface);margin:0;border:none;border-top:3px solid var(--gold);border-radius:0;padding:16px}
+.scan-result h3{font-family:var(--mono);color:var(--gold);font-size:11px;margin-bottom:10px;letter-spacing:2px;text-transform:uppercase}
+.manual-scan{padding:10px 16px 14px;display:flex;gap:8px}
+.manual-scan input{flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:0;padding:10px 13px;color:var(--text);font-family:var(--mono);font-size:13px;outline:none;letter-spacing:1px}
+.manual-scan button{background:var(--text);border:none;color:#fff;border-radius:0;padding:10px 14px;font-family:var(--mono);font-size:11px;font-weight:700;cursor:pointer;letter-spacing:1px}
+#add-view{padding:16px}
+.add-section{margin-bottom:20px}
+.add-section-title{font-family:var(--mono);font-size:9px;color:var(--gold);letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;border-bottom:2px solid var(--gold);padding-bottom:5px}
+.form-field{margin-bottom:10px}
+.form-field label{font-family:var(--mono);font-size:9px;color:var(--text3);letter-spacing:1.5px;text-transform:uppercase;display:block;margin-bottom:5px}
+.form-field input,.form-field select,.form-field textarea{width:100%;background:var(--surface);border:none;border-bottom:1px solid var(--border);border-radius:0;padding:10px 4px;color:var(--text);font-family:var(--mono);font-size:13px;outline:none}
+.form-field input:focus,.form-field select:focus{border-bottom-color:var(--gold)}
+.form-field select option{background:var(--surface2)}
+.form-field textarea{min-height:70px;resize:vertical;font-family:var(--mono)}
+.form-row{display:flex;gap:10px}.form-row .form-field{flex:1}
+.autofill-bar{display:flex;gap:8px;margin-bottom:12px}
+.btn-autofill{background:var(--text);border:none;color:#fff;border-radius:0;padding:11px 16px;font-family:var(--mono);font-size:11px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;letter-spacing:1px;text-transform:uppercase;white-space:nowrap}
+.btn-autofill:disabled{opacity:.4}
+.btn-primary{background:var(--gold);color:#fff;border:none;border-radius:0;padding:14px;width:100%;font-family:var(--mono);font-size:13px;font-weight:700;cursor:pointer;letter-spacing:2px;text-transform:uppercase}
+.autofill-result{background:var(--surface2);border:none;border-left:3px solid var(--green);border-radius:0;padding:10px 13px;margin-bottom:12px;font-family:var(--mono);font-size:11px;color:var(--green);display:none;letter-spacing:.5px}
+.autofill-result.show{display:block}
+.reel-assign-item{background:var(--surface2);border:none;border-left:3px solid var(--border2);border-radius:0;padding:11px 13px;margin-bottom:6px;display:flex;align-items:center;justify-content:space-between;gap:10px}
+.rai-label{font-family:var(--mono);font-size:12px;font-weight:700}
+.rai-bc{font-family:var(--mono);font-size:10px;color:var(--gold);min-width:110px}
+#inline-scanner{display:none;background:#000;overflow:hidden;margin-bottom:12px;position:relative}
+#inline-scanner.show{display:block}
+#inline-video{width:100%;height:200px;object-fit:cover}
+.inline-scan-overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center}
+.inline-scan-box{width:55%;aspect-ratio:2.5;border:1px solid var(--gold);box-shadow:0 0 0 9999px rgba(0,0,0,.6)}
+#stats-view{padding:14px}
+.stat-card{background:var(--surface);border:none;border-bottom:1px solid var(--border);border-radius:0;padding:16px;margin-bottom:0}
+.stat-card h3{font-family:var(--mono);font-size:9px;color:var(--gold);letter-spacing:2px;text-transform:uppercase;margin-bottom:14px;border-bottom:2px solid var(--gold);padding-bottom:5px}
+.stat-row{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--border)}
+.stat-row:last-child{border-bottom:none}
+.sr-label{font-family:var(--mono);font-size:12px;color:var(--text2);letter-spacing:.5px}
+.sr-val{font-family:var(--mono);font-size:14px;font-weight:700;color:var(--gold)}
+.big-stat{text-align:center;padding:8px 0}
+.bs-num{font-family:var(--serif);font-size:44px;font-weight:700;color:var(--gold);line-height:1}
+.bs-label{font-family:var(--mono);font-size:9px;color:var(--text3);margin-top:4px;letter-spacing:1.5px;text-transform:uppercase}
+.big-stats-row{display:flex;gap:10px}.big-stats-row .stat-card{flex:1}
+.genre-bar{margin-bottom:8px}
+.genre-bar-label{display:flex;justify-content:space-between;font-family:var(--mono);font-size:10px;color:var(--text2);margin-bottom:4px;letter-spacing:.5px}
+.genre-bar-track{height:4px;background:var(--surface3);overflow:hidden}
+.genre-bar-fill{height:100%;background:var(--gold);transition:width .5s}
+#modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:200;display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s}
+#modal-overlay.open{opacity:1;pointer-events:all}
+#modal-box{background:var(--surface);border:none;border-top:4px solid var(--gold);padding:20px 18px calc(22px + var(--safe));width:100%;max-width:900px;transform:translateY(30px);transition:transform .2s;max-height:85vh;overflow-y:auto;-webkit-overflow-scrolling:touch}
+#modal-overlay.open #modal-box{transform:translateY(0)}
+#modal-box h3{font-family:var(--serif);font-size:20px;font-weight:700;margin-bottom:6px;color:var(--text)}
+.modal-sub{font-family:var(--mono);font-size:11px;color:var(--text3);margin-bottom:16px;letter-spacing:.5px}
+.modal-form-field{margin-bottom:12px}
+.modal-form-field label{font-family:var(--mono);font-size:9px;color:var(--text3);letter-spacing:1.5px;text-transform:uppercase;display:block;margin-bottom:5px}
+.modal-form-field input{width:100%;background:var(--surface2);border:none;border-bottom:2px solid var(--border);border-radius:0;padding:11px 4px;color:var(--text);font-family:var(--mono);font-size:14px;outline:none}
+.modal-form-field input:focus{border-bottom-color:var(--gold)}
+.modal-btns{display:flex;gap:10px;margin-top:16px}
+.modal-btns button{flex:1;padding:13px;border-radius:0;font-family:var(--mono);font-size:12px;font-weight:700;cursor:pointer;border:1px solid;letter-spacing:1px;text-transform:uppercase}
+.btn-cancel{background:var(--surface2);border-color:var(--border);color:var(--text2)}
+.btn-confirm{background:var(--gold);border-color:var(--gold);color:#fff}
+.btn-confirm-green{background:var(--green);border-color:var(--green);color:#fff}
+#toast{position:fixed;bottom:calc(90px + var(--safe));left:50%;transform:translateX(-50%) translateY(20px);background:var(--text);border:none;border-top:3px solid var(--gold);padding:10px 18px;font-family:var(--mono);font-size:11px;color:#fff;white-space:nowrap;letter-spacing:.5px;opacity:0;transition:opacity .2s,transform .2s;pointer-events:none;z-index:300}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.spinner{display:inline-block;width:12px;height:12px;border:2px solid rgba(200,16,46,.3);border-top-color:var(--gold);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+#loading{position:fixed;inset:0;background:var(--text);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;z-index:500}
+.loading-title{font-family:var(--serif);font-size:24px;font-weight:700;color:#fff;letter-spacing:4px}
+.loading-sub{font-family:var(--mono);font-size:10px;color:rgba(255,255,255,0.4);letter-spacing:3px;text-transform:uppercase}
+.film-strip{display:flex;gap:2px}
+.film-frame{width:16px;height:22px;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.2);border-radius:1px;animation:flicker .9s infinite alternate}
+.film-frame:nth-child(2){animation-delay:.18s}.film-frame:nth-child(3){animation-delay:.36s}.film-frame:nth-child(4){animation-delay:.54s}.film-frame:nth-child(5){animation-delay:.72s}
+@keyframes flicker{to{background:var(--gold)}}
+.empty-state{text-align:center;padding:60px 20px;color:var(--text3);font-family:var(--mono);font-size:12px;letter-spacing:.5px}
+#auth-banner{background:var(--surface2);border-left:4px solid var(--gold);border-radius:0;margin:0;padding:12px 16px;font-family:var(--mono);font-size:11px;color:var(--text2);display:flex;align-items:center;justify-content:space-between;gap:12px}
+#auth-banner.hidden{display:none}
+</style>
+</head>
+<body>
+<div id="loading">
+  <div class="film-strip"><div class="film-frame"></div><div class="film-frame"></div><div class="film-frame"></div><div class="film-frame"></div><div class="film-frame"></div></div>
+  <div class="loading-title">McGano Plex</div>
+  <div class="loading-sub" id="loading-sub">Fetching Archive&hellip;</div>
+</div>
+<div id="app">
+  <div id="header">
+    <div><h1>McGano Plex</h1><div class="subtitle">16mm Film Archive</div></div>
+    <div class="hright">
+      <div class="stats" id="header-stats">&mdash;</div>
+      <button class="btn-signin" id="btn-signin" onclick="signIn()" style="display:none">&#9654; Sign In</button>
+      <button class="btn-signout" id="btn-signout" onclick="signOut()" style="display:none">Sign Out</button>
+    </div>
+  </div>
+  <div id="content">
+    <div id="collection-view" class="view active">
+      <div class="sync-bar">
+        <div class="sync-left"><div class="sync-dot" id="sync-dot"></div><span id="sync-label">Loading&hellip;</span></div>
+        <button class="btn-sync" onclick="loadFromSheet()">&#8635; Refresh</button>
+        <button class="btn-sync" onclick="clearCache();loadFromSheet()" style="margin-left:6px" title="Clear cache and reload from Sheet">&#9654; Force Sync</button>
+      </div>
+      <div id="auth-banner" class="hidden">
+        <span>Sign in with Google to write new films back to your Sheet.</span>
+        <button class="btn-signin" onclick="signIn()">SIGN IN</button>
+      </div>
+      <div class="searchbar"><input type="text" id="search-input" placeholder="SEARCH TITLE, DIRECTOR, GENRE&hellip;" autocomplete="off" autocorrect="off" spellcheck="false"></div>
+      <div id="sort-bar" style="padding:8px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;overflow-x:auto;-webkit-overflow-scrolling:touch;white-space:nowrap">
+        <span style="font-family:var(--mono);font-size:9px;color:var(--text3);letter-spacing:1px;flex-shrink:0">SORT:</span>
+        <button onclick="setSort('az')" id="sort-az" class="sort-btn active-sort" style="font-family:var(--mono);font-size:9px;padding:3px 10px;border:1px solid var(--border);background:var(--text);color:#fff;cursor:pointer;letter-spacing:.5px;flex-shrink:0">A–Z</button>
+        <button onclick="setSort('za')" id="sort-za" class="sort-btn" style="font-family:var(--mono);font-size:9px;padding:3px 10px;border:1px solid var(--border);background:transparent;color:var(--text2);cursor:pointer;letter-spacing:.5px;flex-shrink:0">Z–A</button>
+        <button onclick="setSort('year-asc')" id="sort-year-asc" class="sort-btn" style="font-family:var(--mono);font-size:9px;padding:3px 10px;border:1px solid var(--border);background:transparent;color:var(--text2);cursor:pointer;letter-spacing:.5px;flex-shrink:0">YEAR ↑</button>
+        <button onclick="setSort('year-desc')" id="sort-year-desc" class="sort-btn" style="font-family:var(--mono);font-size:9px;padding:3px 10px;border:1px solid var(--border);background:transparent;color:var(--text2);cursor:pointer;letter-spacing:.5px;flex-shrink:0">YEAR ↓</button>
+        <button onclick="setSort('director')" id="sort-director" class="sort-btn" style="font-family:var(--mono);font-size:9px;padding:3px 10px;border:1px solid var(--border);background:transparent;color:var(--text2);cursor:pointer;letter-spacing:.5px;flex-shrink:0">DIRECTOR</button>
+        <button onclick="setSort('recently-added')" id="sort-recently-added" class="sort-btn" style="font-family:var(--mono);font-size:9px;padding:3px 10px;border:1px solid var(--border);background:transparent;color:var(--text2);cursor:pointer;letter-spacing:.5px;flex-shrink:0">RECENT</button>
+      </div>
+            
+      <div id="filter-banner" style="display:none;background:var(--gold);color:#fff;font-family:var(--mono);font-size:11px;padding:8px 16px;display:none;align-items:center;justify-content:space-between"><span id="filter-label"></span><button onclick="clearFilter()" style="background:none;border:1px solid rgba(255,255,255,0.5);color:#fff;font-family:var(--mono);font-size:10px;padding:3px 10px;cursor:pointer;letter-spacing:1px">&#10005; CLEAR</button></div>
+      <div class="film-list" id="film-list"></div>
+    </div>
+    <div id="scanner-view-wrap" class="view">
+      <div class="scan-area">
+        <video id="scan-video" playsinline autoplay muted></video>
+        <div class="scan-overlay"><div class="scan-box"><div class="scan-line"></div><div class="scan-label">SCAN REEL BARCODE</div></div></div>
+      </div>
+      <div class="manual-scan">
+        <input type="text" id="manual-bc-input" placeholder="SCAN OR TYPE BARCODE (e.g. 0001)&hellip;" autocomplete="off" autocorrect="off" spellcheck="false">
+        <button onclick="lookupBarcode(document.getElementById('manual-bc-input').value)">LOOK UP</button>
+      </div>
+      <div class="scan-status" id="scan-status"><p>Tera scanner ready &mdash; scan any barcode</p><button onclick="initScanner()" style="margin-top:10px;background:var(--text);border:none;color:#fff;font-family:var(--mono);font-size:11px;font-weight:700;padding:10px 20px;cursor:pointer;letter-spacing:1px">USE CAMERA INSTEAD</button></div>
+      <div id="scan-result" class="scan-result" style="display:none"></div>
+    </div>
+    <div id="add-view" class="view">
+      <div class="add-section">
+        <div class="add-section-title">Film Information</div>
+        <div class="form-field"><label>Title *</label><input type="text" id="add-title" placeholder="e.g. THE GODFATHER" autocomplete="off" autocorrect="off" spellcheck="false" style="text-transform:uppercase"></div>
+        <div class="autofill-bar"><button class="btn-autofill" id="btn-autofill" onclick="doAutoFill()">&#9654; Auto-Fill from TMDB</button></div>
+        <div class="autofill-result" id="autofill-result"></div>
+        <input type="hidden" id="add-poster-input" value="">
+        <div id="add-poster-wrap" style="margin-bottom:12px">
+          <img id="add-poster-preview" src="" style="display:none;width:80px;border-radius:2px;border:1px solid var(--border2)">
+        </div>
+        <div class="form-row">
+          <div class="form-field"><label>Director</label><input type="text" id="add-director" autocomplete="off"></div>
+          <div class="form-field"><label>Year</label><input type="number" id="add-year" placeholder="1979"></div>
+        </div>
+        <div class="form-row">
+          <div class="form-field"><label>Genre</label><input type="text" id="add-genre" placeholder="DRAMA, THRILLER" autocomplete="off"></div>
+          <div class="form-field"><label>RT Score</label><input type="text" id="add-rt" placeholder="94%" autocomplete="off"></div>
+        </div>
+        <div class="form-row">
+          <div class="form-field"><label>Distributor</label><input type="text" id="add-distributor" autocomplete="off"></div>
+          <div class="form-field"><label>Language</label><input type="text" id="add-language" value="ENGLISH" autocomplete="off"></div>
+        </div>
+      </div>
+      <div class="add-section">
+        <div class="add-section-title">Physical Details</div>
+        <div class="form-row">
+          <div class="form-field"><label>Format</label><select id="add-format"><option value="">&#8212;</option><option>FLAT</option><option>SCOPE</option><option>FLAT (ADAPTED FOR TV)</option><option>SCOPE (ADAPTED FOR TV)</option></select></div>
+          <div class="form-field"><label>Color / B&amp;W</label><select id="add-color"><option value="">&#8212;</option><option>COLOR</option><option>BLACK &amp; WHITE</option><option>COLOR (FADED)</option><option>EASTMAN COLOR</option><option>TECHNICOLOR</option></select></div>
+        </div>
+        <div class="form-row">
+          <div class="form-field"><label>Film Stock</label><input type="text" id="add-stock" placeholder="KODAK LPP" autocomplete="off"></div>
+          <div class="form-field"><label>Aspect Ratio</label><input type="text" id="add-ar" placeholder="1.85:1" autocomplete="off"></div>
+        </div>
+        <div class="form-row">
+          <div class="form-field"><label>Number of Reels</label><input type="number" id="add-reelcount" placeholder="2" min="1" max="99" oninput="updateReelAssign()"></div>
+          <div class="form-field"><label>Year Obtained</label><input type="number" id="add-yearobtained" placeholder="2025"></div>
+        </div>
+        <div class="form-row">
+          <div class="form-field"><label>Canned</label><select id="add-canned"><option value="">&#8212;</option><option>YES</option><option>NO</option></select></div>
+          <div class="form-field"><label>Serviced</label><select id="add-serviced"><option value="">&#8212;</option><option>YES</option><option>NO</option></select></div>
+        </div>
+        <div class="form-field"><label>Inspection Notes</label><textarea id="add-inspect" placeholder="Splices, condition notes&hellip;"></textarea></div>
+        <div class="form-field"><label>Notes</label><textarea id="add-notes" placeholder="Additional notes&hellip;"></textarea></div>
+      </div>
+      <div class="add-section" id="reel-assign-section" style="display:none">
+        <div class="add-section-title">Assign Reel Barcodes <span style="font-size:8px;color:var(--text3);font-weight:400">(OPTIONAL)</span></div>
+        <div id="inline-scanner"><video id="inline-video" playsinline autoplay muted></video><div class="inline-scan-overlay"><div class="inline-scan-box"></div></div></div>
+        <div id="reel-assign-list"></div>
+      </div>
+      <button class="btn-primary" onclick="saveFilm()">Add to Archive</button>
+      <div style="height:30px"></div>
+    </div>
+    <div id="stats-view" class="view">
+      <div class="sync-bar">
+        <button class="btn-sync" id="refresh-scores-btn" onclick="refreshAllScores()">&#9654; Refresh RT Scores</button>
+        <button class="btn-sync" onclick="exportCollection()" style="margin-left:6px">&#11015; Export CSV</button>
+        <button class="btn-sync" onclick="printCollection()" style="margin-left:6px">&#128438; Print List</button>
+      </div>
+      <div style="height:14px"></div>
+      <div class="big-stats-row">
+        <div class="stat-card"><div class="big-stat"><div class="bs-num" id="stat-total">&#8212;</div><div class="bs-label">Total Films</div></div></div>
+        <div class="stat-card"><div class="big-stat"><div class="bs-num" id="stat-reels">&#8212;</div><div class="bs-label">Total Reels</div></div></div>
+      </div>
+      <div class="stat-card">
+        <h3>Collection</h3>
+        <div class="stat-row"><span class="sr-label">In Archive</span><span class="sr-val" id="stat-in"></span></div>
+        <div class="stat-row"><span class="sr-label">Reels Checked Out</span><span class="sr-val" id="stat-out" style="color:var(--red)"></span></div>
+        <div class="stat-row"><span class="sr-label">Screened</span><span class="sr-val" id="stat-screened"></span></div>
+        <div class="stat-row"><span class="sr-label">Unique Directors</span><span class="sr-val" id="stat-dirs"></span></div>
+        <div class="stat-row"><span class="sr-label">Avg RT Score</span><span class="sr-val" id="stat-rt"></span></div>
+      </div>
+      <div class="stat-card"><h3>Top Genres</h3><div id="stat-genres"></div></div>
+      <div class="stat-card"><h3>By Decade</h3><div id="stat-decades"></div></div>
+
+      <div class="stat-card"><h3>By Director <span style="font-size:8px;color:var(--text3);font-weight:400;letter-spacing:1px">TOP 15</span></h3><div id="stat-directors"></div></div>
+      <div class="stat-card"><h3>By Color</h3><div id="stat-color"></div></div>
+      <div class="stat-card"><h3>By Format</h3><div id="stat-format"></div></div>
+      <div class="stat-card"><h3>By Language</h3><div id="stat-language"></div></div>
+    </div>
+  </div>
+  <div id="tabbar">
+    <div class="tab active" data-view="collection-view" onclick="switchTab('collection-view',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="7" height="7" rx=".5"/><rect x="14" y="3" width="7" height="7" rx=".5"/><rect x="3" y="14" width="7" height="7" rx=".5"/><rect x="14" y="14" width="7" height="7" rx=".5"/></svg>Archive
+    </div>
+    <div class="tab" data-view="scanner-view-wrap" onclick="switchTab('scanner-view-wrap',this);focusScanInput()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 7V5a2 2 0 012-2h2M17 3h2a2 2 0 012 2v2M21 17v2a2 2 0 01-2 2h-2M7 21H5a2 2 0 01-2-2v-2"/><line x1="7" y1="12" x2="17" y2="12"/></svg>Scan
+    </div>
+    <div class="tab" data-view="add-view" onclick="switchTab('add-view',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>Add Film
+    </div>
+    <div class="tab" data-view="stats-view" onclick="switchTab('stats-view',this);renderStats()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>Stats
+    </div>
+  </div>
+</div>
+<div id="detail-panel">
+  <div class="dp-header">
+    <div class="dp-back" onclick="closeDetail()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>Back</div>
+    <h2 id="dp-title">&#8212;</h2>
+    <button id="dp-edit-btn" onclick="if(currentDetailFilm)openEditModal(currentDetailFilm.id)" style="background:var(--gold);border:none;color:#fff;font-family:var(--mono);font-size:9px;font-weight:700;padding:6px 12px;cursor:pointer;letter-spacing:1px;white-space:nowrap">EDIT</button><button onclick="if(currentDetailFilm)openDeleteModal(currentDetailFilm.id)" style="background:none;border:1px solid rgba(255,255,255,0.3);color:rgba(255,255,255,0.7);font-family:var(--mono);font-size:9px;font-weight:700;padding:6px 12px;cursor:pointer;letter-spacing:1px;white-space:nowrap;margin-left:6px">DELETE</button>
+  </div>
+  <div class="dp-body" id="dp-body"></div>
+</div>
+<div id="modal-overlay" onclick="closeModalIfBg(event)">
+  <div id="modal-box">
+    <h3 id="modal-title"></h3>
+    <div class="modal-sub" id="modal-sub"></div>
+    <div id="modal-content"></div>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+      <button class="btn-confirm" id="modal-confirm-btn" onclick="confirmModal()">Confirm</button>
+    </div>
+  </div>
+</div>
+<div id="toast"></div>
+<div id="scan-overlay-modal" onclick="if(event.target===this)closeScanOverlay()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:400;align-items:center;justify-content:center;padding:20px">
+  <div id="scan-overlay-box" style="background:var(--surface);border-top:4px solid var(--gold);width:100%;max-width:500px;max-height:80vh;overflow-y:auto;-webkit-overflow-scrolling:touch;border-radius:0;padding:20px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <div style="font-family:var(--mono);font-size:9px;color:var(--gold);letter-spacing:2px;text-transform:uppercase">Barcode Scan</div>
+      <button onclick="closeScanOverlay()" style="background:none;border:none;color:var(--text3);font-size:20px;cursor:pointer;padding:0 4px;line-height:1">&times;</button>
+    </div>
+    <div id="scan-overlay-content"></div>
+  </div>
+</div>
+<script>
+const CLIENT_ID='1029385927428-qe0e0ptjus8dog7m18uosl3u2i4triq7.apps.googleusercontent.com';
+const SHEET_ID='1uRCOK_3i2w4gE4652NLzub9KZ_QMHWf20k0VVIAiTCA';
+const SCOPES='https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive.file';
+const DRIVE_FOLDER_ID='1kzgKqW4U83t7-h0Vr4D4b3XcM8aBgewL';
+let DB={features:[],reels:[]};
+const CACHE_KEY='mcgano_plex_v1';
+const CACHE_VERSION=2;
+let POSTER_CACHE={};
+const TMDB_IMG='https://image.tmdb.org/t/p/';
+const TMDB_KEY='47d88e6f040600fdc8db685edc6fcf08';
+const OMDB_KEY='e5b9e1d0';
+let filteredFeatures=[];
+let accessToken=null,tokenExpiry=0,tokenClient=null;
+let scanStream=null,inlineScanStream=null,barcodeDetectInterval=null;
+let currentDetailFilm=null,modalAction=null,modalReel=null;
+let reelAssignments={},assigningReelIndex=null;
+let activeFilter={type:null,value:null};
+let activeSort='az'; // az, za, year-asc, year-desc, director, recently-added
+document.addEventListener('DOMContentLoaded',()=>{
+  document.getElementById('add-yearobtained').value=new Date().getFullYear();
+  // Load cache instantly so archive is visible immediately
+  const cached=loadFromCache();
+  if(cached&&cached.features&&cached.features.length>0){
+    DB.features=cached.features;DB.reels=cached.reels||[];
+    render();document.getElementById('loading').style.display='none';
+    const age=Math.round((Date.now()-cached.savedAt)/60000);
+    setSyncStatus('busy','Cached ('+(age<1?'just now':age+'m ago')+') — syncing…');
+  }
+  loadFromSheet();
+  setTimeout(loadGoogleAuth,2000);
+});
+
+async function loadFromSheet(){
+  setSyncStatus('busy','Fetching from Sheet\u2026');
+  try{
+    const fURL='https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=out:json&sheet=Features';
+    const rURL='https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=out:json&sheet=Reel%20Tracker';
+    const [fRes,rRes]=await Promise.all([fetch(fURL),fetch(rURL)]);
+    if(!fRes.ok||!rRes.ok) throw new Error('Sheet fetch failed');
+    const fText=await fRes.text();
+    const rText=await rRes.text();
+    const fJson=JSON.parse(fText.replace(/^[^(]+\(/,'').replace(/\);\s*$/,''));
+    const rJson=JSON.parse(rText.replace(/^[^(]+\(/,'').replace(/\);\s*$/,''));
+    DB.features=parseFeatures(fJson);
+    DB.reels=parseReels(rJson);
+    DB.features.forEach(f=>{if(f.posterUrl&&f.posterUrl.trim())POSTER_CACHE[f.id]=f.posterUrl.trim();});
+    const now=new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
+    setSyncStatus('live',DB.features.length+' films \u00b7 synced '+now);
+    render();
+    document.getElementById('loading').style.display='none';
+    fetchPostersInBackground();
+    saveToCache(); // Sheet always wins
+  }catch(e){
+    if(DB.features.length===0){
+      const cached=loadFromCache();
+      if(cached&&cached.features&&cached.features.length>0){
+        DB.features=cached.features;DB.reels=cached.reels||[];
+        render();document.getElementById('loading').style.display='none';
+        setSyncStatus('error','Offline — showing cached data');
+      }else{
+        document.getElementById('loading-sub').textContent='No connection — open when online to cache your archive';
+        setSyncStatus('error','No connection');
+        setTimeout(()=>document.getElementById('loading').style.display='none',3000);
+      }
+    }else{
+      setSyncStatus('error','Sheet unavailable — showing cached data');
+    }
+    console.warn('Sheet error:',e.message);
+  }
+}
+
+function cv(row,i){const c=row.c&&row.c[i];if(!c||c.v===null||c.v===undefined)return '';return String(c.v).trim().replace(/\.0$/,'');}
+function parseFeatures(json){
+  return(json.table.rows||[]).map((row,i)=>{
+    const title=cv(row,0);if(!title||title==='TITLE')return null;
+    return{id:cv(row,24)||('16MM-'+String(i+1).padStart(4,'0')),title,distributor:cv(row,1),year:cv(row,2),language:cv(row,3),genre:cv(row,4),director:cv(row,5),rtScore:cv(row,7),filmStock:cv(row,8),format:cv(row,9),color:cv(row,10),reels:cv(row,11),aspectRatio:cv(row,12),canned:cv(row,14),yearObtained:cv(row,15),serviced:cv(row,16),inspectionNotes:cv(row,17),notes:cv(row,18),previousCollector:cv(row,19),priceBought:cv(row,20),screened:cv(row,21),highestSold:cv(row,22),status:cv(row,25)||'IN ARCHIVE',checkedOutTo:cv(row,26),dateOut:cv(row,27),dateIn:cv(row,28),scanNotes:cv(row,29),posterUrl:cv(row,30)};
+  }).filter(Boolean);
+}
+function parseReels(json){
+  return(json.table.rows||[]).map(row=>{
+    const bc=cv(row,0);if(!bc||bc==='BARCODE ID')return null;
+    return{barcodeId:bc,filmTitle:cv(row,1),reelNum:cv(row,2),status:cv(row,3)||'IN ARCHIVE',checkedOutTo:cv(row,4),dateOut:cv(row,5),dateIn:cv(row,6),phoneEmail:cv(row,7),notes:cv(row,8)};
+  }).filter(Boolean);
+}
+
+// ---- POSTER FETCHING ----
+function cleanTitle(t){
+  let clean=t
+    .replace(/\s*\(COPY [A-Z]\)/gi,'')           // (COPY A)
+    .replace(/\s*\([^)]*SUBTITLES?[^)]*\)/gi,'') // (ENGLISH SUBTITLES)
+    .replace(/\s*\([^)]*PRINT[^)]*\)/gi,'')      // (TV PRINT)
+    .replace(/\s*\([^)]*DUBBED[^)]*\)/gi,'')     // (DUBBED)
+    .replace(/\s*\([^)]*REISSUE[^)]*\)/gi,'')    // (REISSUE)
+    .replace(/\s*\([^)]*:[^)]*\)/gi,'')          // (Italian: ...) (aka: ...) any colon-containing parens
+    .replace(/,\s*THE$/i,'')
+    .replace(/\s+/g,' ')
+    .trim();
+  // Convert ALL CAPS to Title Case for better TMDB matching
+  if(clean===clean.toUpperCase()&&clean.length>2){
+    clean=clean.toLowerCase().replace(/(^|\s|-)([a-z])/g,(_,p,c)=>p+c.toUpperCase());
+  }
+  return clean;
+}
+async function getPoster(film){
+  try{const r=await fetch('https://api.themoviedb.org/3/search/movie?api_key='+TMDB_KEY+'&query='+encodeURIComponent(cleanTitle(film.title))+'&year='+(film.year||''));const d=await r.json();if(d.results&&d.results.length>0){const exact=d.results.find(m=>m.title&&m.title.toUpperCase()===cleanTitle(film.title).toUpperCase());const pick=exact||d.results[0];if(pick.poster_path)return TMDB_IMG+'w500'+pick.poster_path;}}catch(e){}
+  try{const r=await fetch('https://api.themoviedb.org/3/search/movie?api_key='+TMDB_KEY+'&query='+encodeURIComponent(cleanTitle(film.title)));const d=await r.json();if(d.results&&d.results.length>0){const exact=d.results.find(m=>m.title&&m.title.toUpperCase()===cleanTitle(film.title).toUpperCase());const pick=exact||d.results[0];if(pick.poster_path)return TMDB_IMG+'w500'+pick.poster_path;}}catch(e){}
+  try{const r=await fetch('https://www.omdbapi.com/?apikey='+OMDB_KEY+'&t='+encodeURIComponent(cleanTitle(film.title))+'&y='+film.year+'&type=movie');const d=await r.json();if(d.Poster&&d.Poster!=='N/A')return d.Poster;}catch(e){}
+  try{const r=await fetch('https://www.omdbapi.com/?apikey='+OMDB_KEY+'&t='+encodeURIComponent(cleanTitle(film.title))+'&type=movie');const d=await r.json();if(d.Poster&&d.Poster!=='N/A')return d.Poster;}catch(e){}
+  return null;
+}
+async function fetchPostersInBackground(){
+  const missing=DB.features.filter(f=>!POSTER_CACHE[f.id]).slice(0,30);
+  for(const film of missing){
+    const p=await getPoster(film);
+    if(p){
+      POSTER_CACHE[film.id]=p;
+      refreshCard(film.id);
+      // Persist poster URL to Sheet so it loads instantly next time
+      if(isAuthed()&&film.posterUrl!==p){
+        film.posterUrl=p;
+        savePosterToSheet(film).catch(()=>{});
+      }
+    }
+    await new Promise(r=>setTimeout(r,150));
+  }
+}
+
+async function savePosterToSheet(film){
+  try{
+    const data=await sheetsGet('Features!A2:AE');
+    const rows=data.values||[];
+    const idx=rows.findIndex(r=>r[24]&&r[24].toUpperCase()===film.id.toUpperCase());
+    if(idx===-1)return;
+    // Column AE (index 30) = posterUrl
+    await sheetsUpdate('Features!AE'+(idx+2)+':AE'+(idx+2),[[film.posterUrl]]);
+  }catch(e){console.warn('Poster save failed:',e.message);}
+}
+function refreshCard(filmId){
+  const card=document.querySelector('[data-film-id="'+filmId+'"]');
+  if(!card)return;
+  const poster=POSTER_CACHE[filmId];if(!poster)return;
+  const ph=card.querySelector('.poster-placeholder');
+  if(ph){const img=document.createElement('img');img.src=poster;img.style.cssText='width:46px;min-width:46px;height:68px;object-fit:cover;border-radius:2px;margin-right:14px;flex-shrink:0;border:1px solid var(--border)';ph.parentNode.replaceChild(img,ph);}
+}
+
+// ---- AUTH ----
+
+// ---- LOCAL CACHE ----
+function saveToCache(){
+  try{
+    localStorage.setItem(CACHE_KEY,JSON.stringify({
+      version:CACHE_VERSION,savedAt:Date.now(),
+      features:DB.features,reels:DB.reels
+    }));
+  }catch(e){console.warn('Cache write failed:',e.message);}
+}
+function loadFromCache(){
+  try{
+    const raw=localStorage.getItem(CACHE_KEY);
+    if(!raw)return null;
+    const p=JSON.parse(raw);
+    if(p.version!==CACHE_VERSION)return null;
+    return p;
+  }catch(e){return null;}
+}
+function clearCache(){try{localStorage.removeItem(CACHE_KEY);}catch(e){}}
+
+function loadGoogleAuth(){
+  const s=document.createElement('script');s.src='https://accounts.google.com/gsi/client';s.onload=initAuth;s.onerror=()=>showSignedOut();document.body.appendChild(s);
+}
+function initAuth(){
+  tokenClient=google.accounts.oauth2.initTokenClient({client_id:CLIENT_ID,scope:SCOPES,callback:onToken});
+  const tok=localStorage.getItem('mp_token');const exp=parseInt(localStorage.getItem('mp_exp')||'0');
+  if(tok&&Date.now()<exp){accessToken=tok;tokenExpiry=exp;showSignedIn();}else showSignedOut();
+}
+function onToken(resp){
+  if(resp.error){showSignedOut();return;}
+  accessToken=resp.access_token;tokenExpiry=Date.now()+(resp.expires_in-60)*1000;
+  localStorage.setItem('mp_token',accessToken);localStorage.setItem('mp_exp',tokenExpiry);
+  showSignedIn();showToast('\u2713 Signed in \u2014 two-way sync enabled');
+}
+function signIn(){if(tokenClient)tokenClient.requestAccessToken();}
+function signOut(){
+  if(accessToken&&window.google)google.accounts.oauth2.revoke(accessToken,()=>{});
+  accessToken=null;tokenExpiry=0;localStorage.removeItem('mp_token');localStorage.removeItem('mp_exp');
+  showSignedOut();showToast('Signed out');
+}
+function isAuthed(){return accessToken&&Date.now()<tokenExpiry;}
+function showSignedIn(){document.getElementById('btn-signin').style.display='none';document.getElementById('btn-signout').style.display='block';document.getElementById('auth-banner').classList.add('hidden');}
+function showSignedOut(){document.getElementById('btn-signin').style.display='block';document.getElementById('btn-signout').style.display='none';document.getElementById('auth-banner').classList.remove('hidden');}
+
+// ---- SHEETS API ----
+async function sheetsAppend(range,values){
+  if(!isAuthed())throw new Error('Not signed in');
+  const r=await fetch('https://sheets.googleapis.com/v4/spreadsheets/'+SHEET_ID+'/values/'+encodeURIComponent(range)+':append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS',{method:'POST',headers:{Authorization:'Bearer '+accessToken,'Content-Type':'application/json'},body:JSON.stringify({values})});
+  if(!r.ok)throw new Error('Sheets append '+r.status);
+}
+async function sheetsUpdate(range,values){
+  if(!isAuthed())throw new Error('Not signed in');
+  const r=await fetch('https://sheets.googleapis.com/v4/spreadsheets/'+SHEET_ID+'/values/'+encodeURIComponent(range)+'?valueInputOption=USER_ENTERED',{method:'PUT',headers:{Authorization:'Bearer '+accessToken,'Content-Type':'application/json'},body:JSON.stringify({values})});
+  if(!r.ok)throw new Error('Sheets update '+r.status);
+}
+async function sheetsGet(range){
+  const h=isAuthed()?{Authorization:'Bearer '+accessToken}:{};
+  const r=await fetch('https://sheets.googleapis.com/v4/spreadsheets/'+SHEET_ID+'/values/'+encodeURIComponent(range),{headers:h});
+  if(!r.ok)throw new Error('Sheets get '+r.status);
+  return r.json();
+}
+async function writeCheckoutToSheet(reel){
+  if(!isAuthed())return;
+  setSyncStatus('busy','Updating Sheet\u2026');
+  try{
+    const data=await sheetsGet('Reel Tracker!A2:I');const rows=data.values||[];
+    const idx=rows.findIndex(r=>r[0]&&r[0].toUpperCase()===reel.barcodeId.toUpperCase());
+    if(idx===-1){await sheetsAppend('Reel Tracker!A2:I',[[reel.barcodeId,reel.filmTitle,reel.reelNum,reel.status,reel.checkedOutTo||'',reel.dateOut||'',reel.dateIn||'',reel.phoneEmail||'',reel.notes||'']]);}
+    else{await sheetsUpdate('Reel Tracker!A'+(idx+2)+':I'+(idx+2),[[reel.barcodeId,reel.filmTitle,reel.reelNum,reel.status,reel.checkedOutTo||'',reel.dateOut||'',reel.dateIn||'',reel.phoneEmail||'',reel.notes||'']]);}
+    setSyncStatus('live','Sheet updated');
+  }catch(e){setSyncStatus('error','Sheet update failed');}
+}
+async function writeFilmToSheet(film,newReels){
+  if(!isAuthed()){showToast('Sign in to sync to Sheet');return;}
+  setSyncStatus('busy','Writing to Sheet\u2026');
+  try{
+    const fRow=[film.title,film.distributor,film.year,film.language,film.genre,film.director,'',film.rtScore,film.filmStock,film.format,film.color,film.reels,film.aspectRatio,'',film.canned,film.yearObtained,film.serviced,film.inspectionNotes,film.notes,film.previousCollector||'',film.priceBought||'',film.screened||'','','','',film.status,'','','','',film.id];
+    const rRows=newReels.map(r=>[r.barcodeId,r.filmTitle,r.reelNum,r.status,'','','','','']);
+    await sheetsAppend('Features!A2:AE',[fRow]);
+    if(rRows.length)await sheetsAppend('Reel Tracker!A2:I',rRows);
+    setSyncStatus('live','Saved to Sheet');showToast('\u2713 Saved to Google Sheet');saveToCache();
+  }catch(e){setSyncStatus('error','Sheet write failed');showToast('\u26a0 '+e.message);}
+}
+async function writeEditToSheet(film){
+  setSyncStatus('busy','Updating Sheet\u2026');
+  try{
+    const data=await sheetsGet('Features!A2:AE');const rows=data.values||[];
+    const idx=rows.findIndex(r=>r[24]&&r[24].toUpperCase()===film.id.toUpperCase());
+    if(idx===-1){setSyncStatus('error','Film not found in Sheet');return;}
+    await sheetsUpdate('Features!A'+(idx+2)+':AE'+(idx+2),[[film.title,film.distributor,film.year,film.language,film.genre,film.director,'',film.rtScore,film.filmStock,film.format,film.color,film.reels,film.aspectRatio,'',film.canned,film.yearObtained,film.serviced,film.inspectionNotes,film.notes,film.previousCollector||'',film.priceBought||'',film.screened||'','','','',film.status,film.checkedOutTo||'',film.dateOut||'',film.dateIn||'',film.scanNotes||'',film.id]]);
+    setSyncStatus('live','Sheet updated');
+  }catch(e){setSyncStatus('error','Sheet update failed');console.warn('Edit sync:',e.message);}
+}
+
+// ---- RENDER ----
+function setSyncStatus(state,label){
+  const dot=document.getElementById('sync-dot');const lbl=document.getElementById('sync-label');
+  if(dot)dot.className='sync-dot'+(state==='live'?' live':state==='error'?' error':state==='busy'?' busy':'');
+  if(lbl)lbl.textContent=label;
+}
+function switchTab(viewId,el){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById(viewId).classList.add('active');el.classList.add('active');
+  if(viewId!=='scanner-view-wrap'&&scanStream)stopScanner();
+}
+function updateHeaderStats(){
+  const out=DB.reels.filter(r=>r.status!=='IN ARCHIVE').length;
+  const reelTxt=DB.reels.length>0?' \u00b7 '+DB.reels.length+' reels':'';
+  const outTxt=out>0?' \u00b7 '+out+' out':'';
+  document.getElementById('header-stats').textContent=DB.features.length+' films'+reelTxt+outTxt;
+}
+function render(){filteredFeatures=[...DB.features];renderFilmList();updateHeaderStats();}
+function renderFilmList(query){
+  const q=(query||'').toLowerCase().trim();
+  let baseFeatures=[...DB.features];
+  if(activeFilter){
+    const {type,value}=activeFilter;
+    baseFeatures=baseFeatures.filter(f=>{
+      if(type==='genre')return (f.genre||'').toUpperCase().split(',').map(g=>g.trim()).includes(value.toUpperCase());
+      if(type==='director')return (f.director||'').toUpperCase()===value.toUpperCase();
+      if(type==='decade'){const dec=Math.floor(parseInt(f.year)/10)*10+'s';return dec===value;}
+      if(type==='color')return (f.color||'').toUpperCase()===value.toUpperCase();
+      if(type==='format')return (f.format||'').toUpperCase()===value.toUpperCase();
+      if(type==='language')return (f.language||'').toUpperCase()===value.toUpperCase();
+      return true;
+    });
+  }
+  filteredFeatures=q?baseFeatures.filter(f=>(f.title||'').toLowerCase().includes(q)||(f.director||'').toLowerCase().includes(q)||(f.genre||'').toLowerCase().includes(q)||(f.year||'').includes(q)||(f.notes||'').toLowerCase().includes(q)||(f.inspectionNotes||'').toLowerCase().includes(q)||(f.distributor||'').toLowerCase().includes(q)||(f.language||'').toLowerCase().includes(q)||(f.color||'').toLowerCase().includes(q)||(f.format||'').toLowerCase().includes(q)):baseFeatures;
+  // Apply sort
+  filteredFeatures.sort((a,b)=>{
+    const sk=(t)=>(t||'').replace(/^THE\s+/i,'').replace(/^A\s+/i,'').replace(/^AN\s+/i,'');
+    if(activeSort==='za') return sk(b.title).localeCompare(sk(a.title));
+    if(activeSort==='year-asc') return parseInt(a.year||0)-parseInt(b.year||0);
+    if(activeSort==='year-desc') return parseInt(b.year||0)-parseInt(a.year||0);
+    if(activeSort==='director') return (a.director||'').localeCompare(b.director||'');
+    if(activeSort==='recently-added') return (parseInt((b.id||'').replace('16MM-',''))||0)-(parseInt((a.id||'').replace('16MM-',''))||0);
+    return sk(a.title).localeCompare(sk(b.title));
+  });
+  const c=document.getElementById('film-list');
+  if(!filteredFeatures.length){c.innerHTML='<div class="empty-state">No films found</div>';return;}
+  c.innerHTML=filteredFeatures.map(f=>{
+    const outCount=DB.reels.filter(r=>r.filmTitle===f.title&&r.status!=='IN ARCHIVE').length;
+    const reelCount=DB.reels.filter(r=>r.filmTitle===f.title).length;
+    const stag=outCount>0?'<span class="tag status-out">'+outCount+' REEL'+(outCount>1?'S':'')+' OUT</span>':reelCount>0?'<span class="tag status-in">IN ARCHIVE</span>':'<span class="tag" style="color:var(--text3);border-color:var(--border)">NOT IN ARCHIVE</span>';
+    const posterInner=POSTER_CACHE[f.id]
+      ?'<img src="'+POSTER_CACHE[f.id]+'" style="width:46px;min-width:46px;height:68px;object-fit:cover;border-radius:2px;margin-right:14px;flex-shrink:0;border:1px solid var(--border)" onerror="this.style.display=\'none\'">'
+      :'<div class="poster-placeholder" data-fid="'+f.id+'" style="width:46px;min-width:46px;height:68px;background:var(--surface2);border:1px solid var(--border);border-radius:2px;margin-right:14px;flex-shrink:0;display:flex;align-items:center;justify-content:center;padding:3px;overflow:hidden;text-align:center;font-family:var(--serif);font-size:7px;font-weight:700;color:var(--text3);line-height:1.2;text-transform:uppercase">'+esc(f.title)+'</div>';
+    return '<div class="film-card" data-film-id="'+f.id+'" onclick="openDetail(\''+esc(f.id)+'\')">'
+      +'<div style="display:flex;align-items:flex-start">'
+      +posterInner
+      +'<div style="flex:1;min-width:0">'
+      +'<div class="fc-top"><div class="fc-title">'+esc(f.title)+'</div></div>'
+      +'<div class="fc-director">'+(f.director||'\u2014')+' \u00b7 '+(f.year||'\u2014')+'</div>'
+      +'<div class="fc-meta">'
+      +(f.genre?f.genre.split(',').slice(0,2).map(g=>'<span class="tag">'+esc(g.trim())+'</span>').join(''):'')+
+      (f.rtScore?'<span class="tag rt">&#127813; '+esc(f.rtScore)+'</span>':'')+
+      (reelCount?'<span class="tag">'+reelCount+' reel'+(reelCount>1?'s':'')+'</span>':'')+
+      stag+'</div></div></div></div>';
+  }).join('');
+}
+document.getElementById('search-input').addEventListener('input',e=>renderFilmList(e.target.value));
+
+// ---- DETAIL VIEW ----
+function openDetail(filmId){
+  const film=DB.features.find(f=>f.id===filmId);if(!film)return;
+  currentDetailFilm=film;
+  document.getElementById('dp-title').textContent=film.title;
+  const reels=DB.reels.filter(r=>r.filmTitle===film.title);
+  const fld=(label,val)=>'<div class="dp-field"><label>'+label+'</label><span class="'+((!val||val==='')?'empty':'')+'">'+  ((!val||val==='')?'\u2014':esc(val))+'</span></div>';
+  const dposter=POSTER_CACHE[film.id];
+  let html='<div style="display:flex;gap:16px;margin-bottom:16px;align-items:flex-start">';
+  if(dposter){html+='<img src="'+dposter+'" style="width:100px;flex-shrink:0;border-radius:3px;border:1px solid var(--border2);display:block" onerror="this.style.display=\'none\'">';}
+  else{html+='<div style="width:100px;flex-shrink:0;height:150px;background:var(--surface2);border:1px solid var(--border);border-radius:3px;display:flex;align-items:center;justify-content:center;padding:10px;text-align:center;font-family:var(--serif);font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase">'+esc(film.title)+'</div>';}
+  html+='<div style="flex:1">';
+  html+='<div style="font-family:var(--serif);font-size:18px;font-weight:700;line-height:1.3;margin-bottom:6px">'+esc(film.title)+'</div>';
+  html+='<div style="font-family:var(--mono);font-size:11px;color:var(--text3);margin-bottom:10px">'+(film.director||'')+(film.year?' \u00b7 '+film.year:'')+'</div>';
+  if(film.rtScore)html+='<span class="tag rt" style="font-size:12px">&#127813; '+esc(film.rtScore)+'</span>';
+  html+='</div></div>';
+  html+='<div class="dp-section"><div class="dp-section-title">Film</div>';
+  html+='<div class="dp-row">'+fld('Director',film.director)+fld('Year',film.year)+'</div>';
+  html+='<div class="dp-row">'+fld('Genre',film.genre)+fld('RT Score',film.rtScore)+'</div>';
+  html+='<div class="dp-row">'+fld('Distributor',film.distributor)+fld('Language',film.language)+'</div></div>';
+  html+='<div class="dp-section"><div class="dp-section-title">Acquisition</div>';
+  html+='<div class="dp-row">'+fld('Screened',film.screened)+'</div>';
+  const screenedYes=film.screened==='YES';
+  html+='<div style="margin-top:8px">'
+    +(screenedYes
+      ?'<button onclick="toggleScreened(\''+esc(film.id)+'\')" style="background:var(--green);border:none;color:#fff;font-family:var(--mono);font-size:10px;font-weight:700;padding:8px 16px;cursor:pointer;letter-spacing:1px">&#10003; MARK AS NOT SCREENED</button>'
+      :'<button onclick="toggleScreened(\''+esc(film.id)+'\')" style="background:var(--text);border:none;color:#fff;font-family:var(--mono);font-size:10px;font-weight:700;padding:8px 16px;cursor:pointer;letter-spacing:1px">MARK AS SCREENED</button>')
+    +'</div></div>';
+  // Reels section
+  const reelCountMatch=(film.reels||'').match(/(\d+)\s*REEL/i);
+  const expectedReels=reelCountMatch?parseInt(reelCountMatch[1]):0;
+  html+='<div class="dp-section"><div class="dp-section-title">Reels'+(reels.length>0?' ('+reels.length+')':'')+'</div>';
+  reels.forEach(r=>{
+    const isOut=r.status!=='IN ARCHIVE';
+    const bcDisplay=r.barcodeId?esc(r.barcodeId):'<span style="color:var(--text3);font-style:italic">UNASSIGNED</span>';
+    html+='<div class="reel-item"><div class="ri-left"><div class="ri-bc">'+bcDisplay+'</div><div class="ri-title">Reel '+r.reelNum+'</div>'+(isOut?'<div class="checkout-info">'+esc(r.checkedOutTo||'\u2014')+' \u00b7 '+esc(r.dateOut||'\u2014')+'</div>':'')+'</div>'
+      +'<div style="display:flex;align-items:center;gap:10px"><span class="ri-status '+(isOut?'out':'in')+'">'+(isOut?'OUT':'IN')+'</span>'
+      +(r.barcodeId
+        ?(isOut?'<button class="btn-checkin" onclick="checkInAll(\''+esc(r.barcodeId)+'\')">CHECK IN</button>':'<button class="btn-checkout" onclick="checkOutAll(\''+esc(r.barcodeId)+'\')">CHECK OUT</button>')
+        :'<button class="btn-scan-assign" onclick="assignBarcodePrompt(\''+esc(film.id)+'\','+r.reelNum+')">ASSIGN BARCODE</button>')
+      +'</div></div>';
+  });
+  if(reels.length===0){
+    const suggested=expectedReels||2;
+    html+='<div style="background:var(--surface2);border-left:3px solid var(--gold);padding:14px 16px;margin-bottom:8px">'
+      +'<div style="font-family:var(--mono);font-size:10px;color:var(--text3);margin-bottom:10px">No reels assigned yet'+(expectedReels?' \u2014 '+expectedReels+' reel'+(expectedReels>1?'s':'')+' expected':'')+'</div>'
+      +'<div style="display:flex;gap:10px;align-items:center;margin-bottom:12px"><span style="font-family:var(--mono);font-size:11px;color:var(--text2)">Number of reels:</span>'
+      +'<input type="number" id="detail-reel-count" value="'+suggested+'" min="1" max="20" style="width:60px;background:var(--surface);border:none;border-bottom:2px solid var(--gold);padding:4px 6px;font-family:var(--mono);font-size:14px;color:var(--text);outline:none"></div>'
+      +'<button onclick="createReelsForFilm(\''+esc(film.id)+'\')" style="background:var(--text);border:none;color:#fff;font-family:var(--mono);font-size:11px;font-weight:700;padding:10px 18px;cursor:pointer;letter-spacing:1px">CREATE REELS &amp; ASSIGN BARCODES</button>'
+      +'</div>';
+  }
+  html+='</div>';
+  document.getElementById('dp-body').innerHTML=html;
+  document.getElementById('detail-panel').classList.add('open');
+}
+function closeDetail(){document.getElementById('detail-panel').classList.remove('open');setTimeout(()=>{currentDetailFilm=null;},300);}
+
+// ---- BARCODE MATCHING ----
+function matchBarcode(bc,code){
+  if(!bc||!bc.trim())return false;
+  return bc.toUpperCase()===code.toUpperCase()||bc.replace(/^0+/,'')===code.replace(/^0+/,'');
+}
+
+// ---- REEL OPERATIONS ----
+function createReelsForFilm(filmId){
+  const film=DB.features.find(f=>f.id===filmId);if(!film)return;
+  const countEl=document.getElementById('detail-reel-count');
+  const count=parseInt(countEl?countEl.value:1)||1;
+  openReelAssignModal(filmId,count);
+}
+function openReelAssignModal(filmId,count,startFrom){
+  const film=DB.features.find(f=>f.id===filmId);if(!film)return;
+  const offset=startFrom||0;
+  document.getElementById('modal-title').textContent='Assign Reel Barcodes';
+  document.getElementById('modal-sub').textContent=film.title;
+  let html='<div style="font-family:var(--mono);font-size:10px;color:var(--text3);margin-bottom:12px">Scan or type each reel\'s barcode. Leave blank to add without a barcode.</div>';
+  for(let i=1;i<=count;i++){
+    const reelNum=offset+i;
+    html+='<div class="modal-form-field"><label>Reel '+reelNum+' Barcode <span style="color:var(--text3);font-weight:400">(optional)</span></label><input type="text" id="reel-assign-'+reelNum+'" placeholder="Scan or type barcode\u2026" autocomplete="off" autocorrect="off" spellcheck="false" onkeydown="reelInputKeydown(event,'+reelNum+')"></div>';
+  }
+  document.getElementById('modal-content').innerHTML=html;
+  document.getElementById('modal-confirm-btn').className='btn-confirm';
+  document.getElementById('modal-confirm-btn').textContent='Save Reels';
+  modalAction='create-reels';modalReel=null;
+  document.getElementById('modal-confirm-btn').dataset.filmId=filmId;
+  document.getElementById('modal-confirm-btn').dataset.count=count;
+  document.getElementById('modal-confirm-btn').dataset.offset=offset||0;
+  openModal();
+  setTimeout(()=>document.getElementById('reel-assign-'+(offset+1))?.focus(),300);
+}
+function assignBarcodePrompt(filmId,reelNum){
+  const bc=prompt('Scan or type barcode for Reel '+reelNum+':');
+  if(!bc||!bc.trim())return;
+  const code=bc.trim();
+  const inUse=DB.reels.find(r=>r.barcodeId&&matchBarcode(r.barcodeId,code));
+  if(inUse){showToast('\u26a0 '+code+' already assigned to '+inUse.filmTitle);return;}
+  const film=DB.features.find(f=>f.id===filmId);if(!film)return;
+  const reel=DB.reels.find(r=>r.filmTitle===film.title&&String(r.reelNum)===String(reelNum));
+  if(!reel){showToast('\u26a0 Reel not found');return;}
+  reel.barcodeId=code;
+  showToast('\u2713 Reel '+reelNum+' assigned: '+code);
+  writeCheckoutToSheet(reel);
+  openDetail(filmId);
+}
+
+// ---- CHECK IN / OUT (multi-reel aware) ----
+function checkOutAll(code){
+  const reels=DB.reels.filter(r=>matchBarcode(r.barcodeId,code));
+  if(!reels.length)return;
+  modalAction='checkout-all';modalReel=reels[0];window._allReels=reels;
+  document.getElementById('modal-title').textContent='Check Out '+(reels.length>1?reels.length+' Reels':'Reel');
+  document.getElementById('modal-sub').textContent=code+' \u2014 '+reels[0].filmTitle+(reels.length>1?' (Reels '+reels.map(r=>r.reelNum).join(', ')+')':'');
+  document.getElementById('modal-content').innerHTML='<div class="modal-form-field"><label>Checked Out To *</label><input type="text" id="modal-name" placeholder="Name" autocomplete="off"></div><div class="modal-form-field"><label>Notes (optional)</label><input type="text" id="modal-notes" placeholder="e.g. Inspection\u2026" autocomplete="off"></div>';
+  document.getElementById('modal-confirm-btn').className='btn-confirm';
+  document.getElementById('modal-confirm-btn').textContent='Check Out'+(reels.length>1?' All':'');
+  openModal();setTimeout(()=>document.getElementById('modal-name')?.focus(),300);
+}
+function checkInAll(code){
+  const reels=DB.reels.filter(r=>matchBarcode(r.barcodeId,code));
+  if(!reels.length)return;
+  modalAction='checkin-all';modalReel=reels[0];window._allReels=reels;
+  document.getElementById('modal-title').textContent='Check In '+(reels.length>1?reels.length+' Reels':'Reel');
+  document.getElementById('modal-sub').textContent=code+' \u2014 '+reels[0].filmTitle+(reels.length>1?' (Reels '+reels.map(r=>r.reelNum).join(', ')+')':'');
+  document.getElementById('modal-content').innerHTML='<div style="font-family:var(--mono);font-size:11px;color:var(--text2);margin-bottom:14px">Checked out to: <strong>'+esc(reels[0].checkedOutTo||'\u2014')+'</strong></div><div class="modal-form-field"><label>Condition Notes (optional)</label><input type="text" id="modal-notes" placeholder="Any notes\u2026" autocomplete="off"></div>';
+  document.getElementById('modal-confirm-btn').className='btn-confirm-green';
+  document.getElementById('modal-confirm-btn').textContent='Check In'+(reels.length>1?' All':'');
+  openModal();
+}
+// Legacy aliases for detail view buttons
+function checkOut(bc){checkOutAll(bc);}
+function checkIn(bc){checkInAll(bc);}
+
+// ---- SCANNER ----
+function focusScanInput(){setTimeout(()=>{const input=document.getElementById('manual-bc-input');if(input)input.focus();},100);}
+async function initScanner(){
+  if(scanStream)return;
+  document.getElementById('scan-status').innerHTML='<p>Starting camera\u2026</p>';
+  try{
+    scanStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment',width:{ideal:1280},height:{ideal:720}}});
+    const v=document.getElementById('scan-video');v.srcObject=scanStream;await v.play();
+    document.getElementById('scan-status').innerHTML='<p>Camera active \u2014 point at reel barcode</p>';
+    if('BarcodeDetector' in window){
+      const det=new BarcodeDetector({formats:['code_128','code_39','qr_code','ean_13','ean_8','code_93']});
+      let last='',lastT=0;
+      barcodeDetectInterval=setInterval(async()=>{
+        if(v.readyState!==4)return;
+        try{const bc=await det.detect(v);if(bc.length>0){const code=bc[0].rawValue;const now=Date.now();if(code!==last||now-lastT>3000){last=code;lastT=now;lookupBarcode(code);}}}catch(e){}
+      },400);
+    }
+  }catch(e){document.getElementById('scan-status').innerHTML='<p style="color:var(--red)">Camera access denied \u2014 use manual entry</p>';}
+}
+function stopScanner(){if(scanStream){scanStream.getTracks().forEach(t=>t.stop());scanStream=null;}if(barcodeDetectInterval){clearInterval(barcodeDetectInterval);barcodeDetectInterval=null;}}
+
+function lookupBarcode(code){
+  if(!code||!code.trim())return;
+  code=code.trim();
+  document.getElementById('scan-result').style.display='block';
+  const matchedReels=DB.reels.filter(r=>matchBarcode(r.barcodeId,code));
+  if(matchedReels.length>0){
+    const allOut=matchedReels.every(r=>r.status!=='IN ARCHIVE');
+    const film=DB.features.find(f=>f.title===matchedReels[0].filmTitle);
+    const statusTag=allOut?'<span class="tag status-out">OUT</span>':'<span class="tag status-in">IN ARCHIVE</span>';
+    const multiNote=matchedReels.length>1?'<div style="font-family:var(--mono);font-size:10px;color:var(--gold);margin-bottom:8px">'+matchedReels.length+' reels share this barcode \u2014 all will be checked in/out together</div>':'';
+    const posterHtml=film&&POSTER_CACHE[film.id]?'<img src="'+POSTER_CACHE[film.id]+'" style="width:56px;height:84px;object-fit:cover;border-radius:2px;border:1px solid var(--border);flex-shrink:0">':'';
+    const filmCard=film
+      ?'<div style="display:flex;gap:12px;align-items:flex-start;margin-bottom:12px;padding:10px;background:var(--surface2)">'+posterHtml+'<div><div style="font-family:var(--serif);font-size:16px;font-weight:700;line-height:1.3;margin-bottom:3px">'+esc(film.title)+'</div><div style="font-family:var(--mono);font-size:10px;color:var(--text3)">'+esc(film.director||'')+(film.year?' \u00b7 '+film.year:'')+'</div>'+(film.genre?'<div style="font-family:var(--mono);font-size:10px;color:var(--text3);margin-top:2px">'+esc(film.genre.split(',').slice(0,2).join(', '))+'</div>':'')+'</div></div>'
+      :'';
+    const codeEsc=esc(code);
+    const filmIdEsc=film?esc(film.id):'';
+    const viewBtn=film?'<button style="flex:1;padding:12px;background:transparent;border:1px solid var(--border);color:var(--text);font-family:var(--mono);font-size:11px;font-weight:700;cursor:pointer;letter-spacing:1px" onclick="closeScanner();openDetail(\''+filmIdEsc+'\')">VIEW FILM</button>':'';
+    const outBtn='<button class="btn-checkout" style="flex:1;padding:12px" onclick="checkOutAll(\''+codeEsc+'\')">YES, CHECK OUT'+(matchedReels.length>1?' ALL':'')+'</button>';
+    const inBtn='<button class="btn-checkin" style="flex:1;padding:12px" onclick="checkInAll(\''+codeEsc+'\')">YES, CHECK IN'+(matchedReels.length>1?' ALL':'')+'</button>';
+    document.getElementById('scan-result').innerHTML=
+      '<h3>Reel'+(matchedReels.length>1?'s':'')+' Found</h3>'
+      +filmCard
+      +'<div style="font-family:var(--mono);font-size:10px;color:var(--gold);margin-bottom:8px">'+codeEsc+'</div>'
+      +multiNote
+      +'<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">'+statusTag+'</div>'
+      +(!allOut
+        ?'<div style="font-family:var(--mono);font-size:11px;color:var(--text2);margin-bottom:12px">In archive \u2014 check it out?</div><div style="display:flex;gap:8px">'+outBtn+viewBtn+'</div>'
+        :'<div style="font-family:var(--mono);font-size:11px;color:var(--text2);margin-bottom:12px">Checked out \u2014 check it back in?</div><div style="display:flex;gap:8px">'+inBtn+viewBtn+'</div>');
+    document.getElementById('scan-status').innerHTML='<p style="color:var(--green)">\u2713 '+matchedReels.length+' reel'+(matchedReels.length>1?'s':'')+' found</p>';
+    return;
+  }
+  document.getElementById('scan-result').innerHTML='<h3 style="color:var(--red)">Not Found</h3><div style="font-family:var(--mono);font-size:11px;color:var(--text2)">'+esc(code)+'</div><div style="font-family:var(--mono);font-size:10px;color:var(--text3);margin-top:6px">Not yet in the archive.</div>';
+  document.getElementById('scan-status').innerHTML='<p style="color:var(--red)">No match found</p>';
+}
+function closeScanner(){const t=document.querySelector('[data-view="collection-view"]');switchTab('collection-view',t);t.classList.add('active');stopScanner();}
+
+// ---- MODAL ----
+function openModal(){document.getElementById('modal-overlay').classList.add('open');}
+function closeModal(){document.getElementById('modal-overlay').classList.remove('open');modalAction=null;modalReel=null;const btn=document.getElementById('modal-confirm-btn');if(btn){btn.style.background='';btn.style.borderColor='';}}
+function closeModalIfBg(e){if(e.target===document.getElementById('modal-overlay'))closeModal();}
+
+function confirmModal(){
+  const today=new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+
+  if(modalAction==='delete-film'){
+    const filmId=document.getElementById('modal-confirm-btn').dataset.filmId;
+    const film=DB.features.find(f=>f.id===filmId);if(!film){closeModal();return;}
+    const reels=DB.reels.filter(r=>r.filmTitle===film.title);
+    const barcodeAction=document.querySelector('input[name="barcode-action"]:checked')?.value||'retire';
+    // Remove film from DB
+    DB.features=DB.features.filter(f=>f.id!==filmId);
+    // Handle reels
+    if(barcodeAction==='retire'){
+      // Remove reels entirely
+      DB.reels=DB.reels.filter(r=>r.filmTitle!==film.title);
+    } else {
+      // Free barcodes - keep reels but clear film association so barcodes can be reused
+      DB.reels=DB.reels.filter(r=>r.filmTitle!==film.title);
+    }
+    // Remove poster from cache
+    delete POSTER_CACHE[filmId];
+    // Sync to sheet if authed
+    if(isAuthed()){
+      deleteFilmFromSheet(film,reels,barcodeAction);
+    }
+    closeModal();
+    closeDetail();
+    render();
+    showToast('✓ '+film.title+' removed from archive');
+    return;
+  }
+
+  if(modalAction==='create-reels'){
+    const filmId=document.getElementById('modal-confirm-btn').dataset.filmId;
+    const count=parseInt(document.getElementById('modal-confirm-btn').dataset.count)||1;
+    const offset=parseInt(document.getElementById('modal-confirm-btn').dataset.offset)||0;
+    const film=DB.features.find(f=>f.id===filmId);if(!film){closeModal();return;}
+    const newReels=[];
+    for(let i=1;i<=count;i++){
+      const reelNum=offset+i;
+      const bc=(document.getElementById('reel-assign-'+reelNum)?.value||'').trim();
+      if(bc&&DB.reels.find(r=>r.barcodeId&&matchBarcode(r.barcodeId,bc)&&r.filmTitle!==film.title)){showToast('\u26a0 Barcode '+bc+' already assigned to another film');return;}
+      const reel={barcodeId:bc,filmTitle:film.title,reelNum:String(reelNum),status:'IN ARCHIVE',checkedOutTo:'',dateOut:'',dateIn:'',phoneEmail:'',notes:''};
+      DB.reels.push(reel);newReels.push(reel);
+    }
+    closeModal();render();openDetail(filmId);
+    showToast('\u2713 '+count+' reel'+(count>1?'s':'')+' added');
+    if(isAuthed()&&newReels.length){
+      const rRows=newReels.map(r=>[r.barcodeId,r.filmTitle,r.reelNum,r.status,'','','','','']);
+      sheetsAppend('Reel Tracker!A2:I',rRows).then(()=>setSyncStatus('live','Sheet updated')).catch(()=>setSyncStatus('error','Sheet write failed'));
+    }
+    return;
+  }
+
+  if(modalAction==='edit'){
+    const filmId=document.getElementById('modal-confirm-btn').dataset.filmId;
+    const film=DB.features.find(f=>f.id===filmId);if(!film){closeModal();return;}
+    const oldTitle=film.title;
+    const newTitle=(document.getElementById('edit-title')?.value||'').trim().toUpperCase()||oldTitle;
+    film.title=newTitle;
+    // Update all reel references if title changed
+    if(newTitle!==oldTitle){
+      DB.reels.filter(r=>r.filmTitle===oldTitle).forEach(r=>{r.filmTitle=newTitle;});
+    }
+    film.director=document.getElementById('edit-director').value.trim().toUpperCase();
+    film.year=document.getElementById('edit-year').value.trim();
+    film.genre=document.getElementById('edit-genre').value.trim().toUpperCase();
+    film.rtScore=document.getElementById('edit-rt').value.trim();
+    film.filmStock=document.getElementById('edit-stock').value.trim().toUpperCase();
+    film.format=document.getElementById('edit-format').value.trim().toUpperCase();
+    film.color=document.getElementById('edit-color').value.trim().toUpperCase();
+    film.aspectRatio=document.getElementById('edit-ar').value.trim();
+    film.reels=document.getElementById('edit-reels').value.trim().toUpperCase();
+    film.canned=document.getElementById('edit-canned').value.trim().toUpperCase();
+    film.serviced=document.getElementById('edit-serviced').value.trim().toUpperCase();
+    film.yearObtained=document.getElementById('edit-obtained').value.trim();
+    film.inspectionNotes=document.getElementById('edit-inspect').value.trim().toUpperCase();
+    film.notes=document.getElementById('edit-notes').value.trim().toUpperCase();
+    // Save reel barcodes
+    const reelCount=parseInt(document.getElementById('edit-reel-count-input')?.value||document.getElementById('modal-confirm-btn').dataset.reelCount)||0;
+    for(let i=1;i<=reelCount;i++){
+      const bc=(document.getElementById('edit-reel-'+i)?.value||'').trim();
+      const existing=DB.reels.find(r=>r.filmTitle===film.title&&String(r.reelNum)===String(i));
+      if(existing){
+        if(bc&&bc!==existing.barcodeId){
+          const inUse=DB.reels.find(r=>r.barcodeId&&matchBarcode(r.barcodeId,bc)&&!(r.filmTitle===film.title&&String(r.reelNum)===String(i)));
+          if(inUse){showToast('\u26a0 Barcode '+bc+' already in use');return;}
+          existing.barcodeId=bc;
+        }else if(!bc){existing.barcodeId='';}
+        if(isAuthed())writeCheckoutToSheet(existing).catch(()=>{});
+      }else{
+        const inUse=bc&&DB.reels.find(r=>r.barcodeId&&matchBarcode(r.barcodeId,bc));
+        if(inUse&&bc){showToast('\u26a0 Barcode '+bc+' already in use');return;}
+        const newReel={barcodeId:bc,filmTitle:film.title,reelNum:String(i),status:'IN ARCHIVE',checkedOutTo:'',dateOut:'',dateIn:'',phoneEmail:'',notes:''};
+        DB.reels.push(newReel);
+        if(isAuthed())writeCheckoutToSheet(newReel).catch(()=>{});
+      }
+    }
+    closeModal();render();openDetail(filmId);
+    showToast('\u2713 '+film.title+' updated');
+    if(isAuthed())writeEditToSheet(film);
+    return;
+  }
+
+  if(modalAction==='checkout-all'||modalAction==='checkin-all'){
+    const reels=window._allReels||[];
+    if(modalAction==='checkout-all'){
+      const name=document.getElementById('modal-name')?.value?.trim();
+      if(!name){showToast('Enter a name');return;}
+      const notes=document.getElementById('modal-notes')?.value?.trim();
+      reels.forEach(r=>{r.status='CHECKED OUT';r.checkedOutTo=name;r.dateOut=today;r.dateIn='';if(notes)r.notes=notes;writeCheckoutToSheet(r);});
+      showToast('\u2713 '+reels.length+' reel'+(reels.length>1?'s':'')+' checked out to '+name);
+    }else{
+      const notes=document.getElementById('modal-notes')?.value?.trim();
+      reels.forEach(r=>{r.status='IN ARCHIVE';r.dateIn=today;if(notes)r.notes=(r.notes?r.notes+' | ':'')+'Return: '+notes;r.checkedOutTo='';r.dateOut='';writeCheckoutToSheet(r);});
+      showToast('\u2713 '+reels.length+' reel'+(reels.length>1?'s':'')+' checked in');
+    }
+    const filmTitle=reels[0].filmTitle;
+    const anyOut=DB.reels.filter(r=>r.filmTitle===filmTitle).some(r=>r.status!=='IN ARCHIVE');
+    const film=DB.features.find(f=>f.title===filmTitle);if(film)film.status=anyOut?'CHECKED OUT':'IN ARCHIVE';
+    closeModal();updateHeaderStats();renderFilmList(document.getElementById('search-input').value);
+    if(currentDetailFilm){const u=DB.features.find(f=>f.id===currentDetailFilm.id);if(u)openDetail(u.id);}
+    if(reels[0])lookupBarcode(reels[0].barcodeId);
+    return;
+  }
+}
+
+// ---- EDIT MODAL ----
+function openEditModal(filmId){
+  const film=DB.features.find(f=>f.id===filmId);if(!film)return;
+  const existingReels=DB.reels.filter(r=>r.filmTitle===film.title);
+  const reelCountMatch=(film.reels||'').match(/(\d+)\s*REEL/i);
+  const expectedCount=reelCountMatch?parseInt(reelCountMatch[1]):existingReels.length||1;
+  function buildReelRows(count){
+    let rows='';
+    for(let i=1;i<=count;i++){
+      const existing=existingReels.find(r=>String(r.reelNum)===String(i));
+      const bcVal=existing?(existing.barcodeId||''):'';
+      rows+='<div class="modal-form-field"><label>Reel '+i+' Barcode <span style="color:var(--text3);font-weight:400">(optional)</span></label><input type="text" id="edit-reel-'+i+'" value="'+esc(bcVal)+'" placeholder="Scan or type barcode" autocomplete="off" autocorrect="off" spellcheck="false" onkeydown="reelInputKeydown(event,'+i+')"></div>';
+    }
+    return rows;
+  }
+  let reelRows=buildReelRows(expectedCount);
+  document.getElementById('modal-title').textContent='Edit Film';
+  document.getElementById('modal-sub').textContent=film.title;
+  document.getElementById('modal-content').innerHTML=`
+    <div style="font-family:var(--mono);font-size:9px;color:var(--gold);letter-spacing:2px;text-transform:uppercase;border-bottom:2px solid var(--gold);padding-bottom:5px;margin-bottom:12px">Film Details</div>
+    <div class="modal-form-field"><label>Title *</label><input type="text" id="edit-title" value="${esc(film.title||'')}" autocomplete="off" autocorrect="off" spellcheck="false" style="text-transform:uppercase"></div>
+    <div class="modal-form-field"><label>Director</label><input type="text" id="edit-director" value="${esc(film.director||'')}" autocomplete="off"></div>
+    <div class="modal-form-field"><label>Year</label><input type="text" id="edit-year" value="${esc(film.year||'')}" autocomplete="off"></div>
+    <div class="modal-form-field"><label>Genre</label><input type="text" id="edit-genre" value="${esc(film.genre||'')}" autocomplete="off"></div>
+    <div class="modal-form-field"><label>RT Score</label><input type="text" id="edit-rt" value="${esc(film.rtScore||'')}" autocomplete="off"></div>
+    <div class="modal-form-field"><label>Film Stock</label><input type="text" id="edit-stock" value="${esc(film.filmStock||'')}" autocomplete="off"></div>
+    <div class="modal-form-field"><label>Format</label><input type="text" id="edit-format" value="${esc(film.format||'')}" autocomplete="off"></div>
+    <div class="modal-form-field"><label>Color / B&W</label><input type="text" id="edit-color" value="${esc(film.color||'')}" autocomplete="off"></div>
+    <div class="modal-form-field"><label>Aspect Ratio</label><input type="text" id="edit-ar" value="${esc(film.aspectRatio||'')}" autocomplete="off"></div>
+    <div class="modal-form-field"><label>Reels</label><input type="text" id="edit-reels" value="${esc(film.reels||'')}" autocomplete="off"></div>
+    <div class="modal-form-field"><label>Canned</label><input type="text" id="edit-canned" value="${esc(film.canned||'')}" autocomplete="off"></div>
+    <div class="modal-form-field"><label>Serviced</label><input type="text" id="edit-serviced" value="${esc(film.serviced||'')}" autocomplete="off"></div>
+    <div class="modal-form-field"><label>Year Obtained</label><input type="text" id="edit-obtained" value="${esc(film.yearObtained||'')}" autocomplete="off"></div>
+    <div class="modal-form-field"><label>Inspection Notes</label><input type="text" id="edit-inspect" value="${esc(film.inspectionNotes||'')}" autocomplete="off"></div>
+    <div class="modal-form-field"><label>Notes</label><input type="text" id="edit-notes" value="${esc(film.notes||'')}" autocomplete="off"></div>
+    <div style="font-family:var(--mono);font-size:9px;color:var(--gold);letter-spacing:2px;text-transform:uppercase;border-bottom:2px solid var(--gold);padding-bottom:5px;margin:16px 0 12px">Reel Barcodes</div>
+    <div style="display:flex;gap:10px;align-items:center;margin-bottom:12px">
+      <span style="font-family:var(--mono);font-size:10px;color:var(--text3)">Number of reels:</span>
+      <input type="number" id="edit-reel-count-input" value="${expectedCount}" min="0" max="99"
+        style="width:60px;background:var(--surface);border:none;border-bottom:2px solid var(--gold);padding:4px 6px;font-family:var(--mono);font-size:14px;color:var(--text);outline:none"
+        oninput="rebuildReelBarcodeFields(this.value)">
+      <span style="font-family:var(--mono);font-size:10px;color:var(--text3)">— update then scan</span>
+    </div>
+    <div id="edit-reel-barcode-fields">${reelRows}</div>
+  `;
+  document.getElementById('modal-confirm-btn').className='btn-confirm';
+  document.getElementById('modal-confirm-btn').textContent='Save Changes';
+  document.getElementById('modal-confirm-btn').dataset.filmId=filmId;
+  document.getElementById('modal-confirm-btn').dataset.reelCount=expectedCount;
+  modalAction='edit';modalReel=null;
+  openModal();
+}
+
+// ---- ADD FILM ----
+function getNextId(){const ids=DB.features.map(f=>{const m=f.id.match(/16MM-(\d+)/);return m?parseInt(m[1]):0;});return '16MM-'+String(Math.max(0,...ids)+1).padStart(4,'0');}
+async function doAutoFill(){
+  const title=document.getElementById('add-title').value.trim();if(!title){showToast('Enter a title first');return;}
+  const btn=document.getElementById('btn-autofill');btn.disabled=true;btn.innerHTML='<span class="spinner"></span> Searching\u2026';
+  const res=document.getElementById('autofill-result');res.className='autofill-result';
+  try{
+    // Try with original case first for better TMDB matching
+    const searchTitle=cleanTitle(title);
+    const r=await fetch('https://api.themoviedb.org/3/search/movie?api_key='+TMDB_KEY+'&query='+encodeURIComponent(searchTitle));
+    const d=await r.json();
+    if(d.results&&d.results.length>0){
+      // Pick best match - prefer exact title match over first result
+      const exact=d.results.find(m=>m.title&&m.title.toUpperCase()===searchTitle.toUpperCase());
+      const m=exact||d.results[0];
+      const dr=await fetch('https://api.themoviedb.org/3/movie/'+m.id+'?api_key='+TMDB_KEY+'&append_to_response=credits');
+      const dd=await dr.json();
+      const dir=dd.credits?.crew?.find(c=>c.job==='Director');
+      const year=m.release_date?m.release_date.slice(0,4):'';
+      const genres=dd.genres?.map(g=>g.name.toUpperCase()).join(', ')||'';
+      const score=m.vote_average?Math.round(m.vote_average*10)+'%':'';
+      if(dir?.name)document.getElementById('add-director').value=dir.name.toUpperCase();
+      if(year)document.getElementById('add-year').value=year;
+      if(genres)document.getElementById('add-genre').value=genres;
+      if(dd.poster_path){document.getElementById('add-poster-preview').src=TMDB_IMG+'w185'+dd.poster_path;document.getElementById('add-poster-preview').style.display='block';document.getElementById('add-poster-input').value=dd.poster_path;}
+      // Fetch real RT score from OMDB
+      let rtScore=score; // fallback to TMDB score
+      try{
+        const omdbR=await fetch('https://www.omdbapi.com/?apikey='+OMDB_KEY+'&t='+encodeURIComponent(cleanTitle(title))+'&y='+year+'&type=movie');
+        const omdbD=await omdbR.json();
+        if(omdbD&&omdbD.Ratings){
+          const rt=omdbD.Ratings.find(r=>r.Source==='Rotten Tomatoes');
+          if(rt&&rt.Value)rtScore=rt.Value; // e.g. "94%"
+        }
+      }catch(e){}
+      if(rtScore)document.getElementById('add-rt').value=rtScore;
+      res.textContent='\u2713 Found: '+dd.title+' ('+(year||'?')+') \u2014 '+(dir?.name||'Unknown director')+(rtScore?' \u00b7 RT: '+rtScore:'');
+      res.className='autofill-result show';
+    }else{res.textContent='\u26a0 Not found on TMDB';res.style.color='var(--text2)';res.className='autofill-result show';}
+  }catch(e){res.textContent='\u26a0 TMDB lookup failed';res.style.color='var(--red)';res.className='autofill-result show';}
+  btn.disabled=false;btn.innerHTML='&#9654; Auto-Fill from TMDB';
+}
+function updateReelAssign(){
+  const count=parseInt(document.getElementById('add-reelcount').value)||0;
+  const section=document.getElementById('reel-assign-section');const list=document.getElementById('reel-assign-list');
+  if(count<1){section.style.display='none';reelAssignments={};return;}
+  section.style.display='block';reelAssignments={};list.innerHTML='';
+  for(let i=1;i<=count;i++){
+    reelAssignments[i]='';
+    const item=document.createElement('div');item.className='reel-assign-item';
+    item.innerHTML='<div class="rai-label">Reel '+i+' of '+count+'</div><div class="rai-bc" id="reel-bc-'+i+'" style="color:var(--text3);font-style:italic">OPTIONAL</div><button class="btn-scan-assign" id="reel-scan-btn-'+i+'" onclick="startReelAssign('+i+')">SCAN BARCODE</button>';
+    list.appendChild(item);
+  }
+}
+async function startReelAssign(idx){
+  assigningReelIndex=idx;document.getElementById('inline-scanner').className='show';
+  if(!inlineScanStream){
+    try{
+      inlineScanStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});
+      const v=document.getElementById('inline-video');v.srcObject=inlineScanStream;await v.play();
+      if('BarcodeDetector' in window){
+        const det=new BarcodeDetector({formats:['code_128','code_39','qr_code','ean_13','ean_8']});
+        let last=null;
+        const iv=setInterval(async()=>{
+          if(!assigningReelIndex){clearInterval(iv);return;}if(v.readyState!==4)return;
+          try{const bc=await det.detect(v);if(bc.length>0){const code=bc[0].rawValue.trim();if(code!==last){last=code;assignBarcodeToReelLocal(code);clearInterval(iv);stopInlineScanner();}}}catch(e){}
+        },400);
+      }
+    }catch(e){showToast('Camera unavailable \u2014 type barcode');const bc=prompt('Enter barcode for Reel '+idx+':');if(bc)assignBarcodeToReelLocal(bc.trim());stopInlineScanner();}
+  }
+}
+function assignBarcodeToReelLocal(code){
+  if(!assigningReelIndex)return;const i=assigningReelIndex;
+  reelAssignments[i]=code;
+  const bcEl=document.getElementById('reel-bc-'+i);const btnEl=document.getElementById('reel-scan-btn-'+i);
+  if(bcEl){bcEl.textContent=code;bcEl.style.color='var(--gold)';bcEl.style.fontStyle='normal';}
+  if(btnEl){btnEl.textContent='CHANGE';btnEl.className='btn-scan-assign assigned';}
+  assigningReelIndex=null;showToast('\u2713 Reel '+i+' \u2192 '+code);
+}
+function stopInlineScanner(){if(inlineScanStream){inlineScanStream.getTracks().forEach(t=>t.stop());inlineScanStream=null;}document.getElementById('inline-scanner').className='';assigningReelIndex=null;}
+async function saveFilm(){
+  const title=document.getElementById('add-title').value.trim().toUpperCase();
+  if(!title){showToast('\u26a0 Title required');return;}
+  const reelCount=parseInt(document.getElementById('add-reelcount').value)||0;
+  if(reelCount<1){showToast('\u26a0 Enter number of reels');return;}
+  const posterPath=document.getElementById('add-poster-input').value;
+  const newId=getNextId();
+  if(posterPath)POSTER_CACHE[newId]=TMDB_IMG+'w500'+posterPath;
+  const film={id:newId,title,distributor:document.getElementById('add-distributor').value.trim().toUpperCase(),year:document.getElementById('add-year').value.trim(),language:document.getElementById('add-language').value.trim().toUpperCase()||'ENGLISH',genre:document.getElementById('add-genre').value.trim().toUpperCase(),director:document.getElementById('add-director').value.trim().toUpperCase(),rtScore:document.getElementById('add-rt').value.trim(),filmStock:document.getElementById('add-stock').value.trim().toUpperCase(),format:document.getElementById('add-format').value,color:document.getElementById('add-color').value,reels:reelCount+' REEL'+(reelCount>1?'S':''),aspectRatio:document.getElementById('add-ar').value.trim(),canned:document.getElementById('add-canned').value,yearObtained:document.getElementById('add-yearobtained').value,serviced:document.getElementById('add-serviced').value,inspectionNotes:document.getElementById('add-inspect').value.trim().toUpperCase(),notes:document.getElementById('add-notes').value.trim().toUpperCase(),previousCollector:'',priceBought:'',screened:'',highestSold:'',status:'IN ARCHIVE',checkedOutTo:'',dateOut:'',dateIn:'',scanNotes:'',posterUrl:posterPath?TMDB_IMG+'w500'+posterPath:''};
+  const newReels=[];
+  for(let i=1;i<=reelCount;i++){const bc=reelAssignments[i]||'';newReels.push({barcodeId:bc,filmTitle:title,reelNum:String(i),status:'IN ARCHIVE',checkedOutTo:'',dateOut:'',dateIn:'',phoneEmail:'',notes:''});}
+  DB.features.push(film);DB.reels.push(...newReels);
+  // Fetch poster immediately for new film
+  getPoster(film).then(p=>{if(p){POSTER_CACHE[film.id]=p;}render();}).catch(()=>render());
+  showToast('\u2713 '+title+' added');
+  await writeFilmToSheet(film,newReels);
+  resetAddForm();const t=document.querySelector('[data-view="collection-view"]');switchTab('collection-view',t);
+}
+function resetAddForm(){
+  ['add-title','add-director','add-year','add-genre','add-rt','add-distributor','add-stock','add-ar','add-inspect','add-notes','add-reelcount'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  document.getElementById('add-language').value='ENGLISH';document.getElementById('add-yearobtained').value=new Date().getFullYear();
+  ['add-format','add-color','add-canned','add-serviced'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('reel-assign-section').style.display='none';document.getElementById('autofill-result').className='autofill-result';
+  document.getElementById('add-poster-input').value='';document.getElementById('add-poster-preview').style.display='none';document.getElementById('add-poster-preview').src='';
+  reelAssignments={};stopInlineScanner();
+}
+
+// ---- STATS ----
+function makeBars(entries,maxVal,filterType,labelSuffix){
+  return entries.map(([label,count])=>{
+    const pct=(count/maxVal*100).toFixed(0);
+    const isActive=activeFilter&&activeFilter.type===filterType&&activeFilter.value===label;
+    const bg=isActive?'var(--surface2)':'transparent';
+    const spanStyle=isActive?'color:var(--gold);font-weight:700':'';
+    const suffix=labelSuffix?' '+labelSuffix:'';
+    const el=document.createElement('div');
+    el.className='genre-bar';
+    el.style.cssText='cursor:pointer;padding:4px 6px;border-radius:2px;background:'+bg+';transition:background .15s';
+    el.onclick=()=>applyFilter(filterType,label);
+    el.innerHTML='<div class="genre-bar-label"><span style="'+spanStyle+'">'+esc(label)+'</span><span>'+count+suffix+'</span></div>'
+      +'<div class="genre-bar-track"><div class="genre-bar-fill" style="width:'+pct+'%"></div></div>';
+    return el.outerHTML;
+  }).join('');
+}
+
+function renderStats(){
+  const films=DB.features,reels=DB.reels;
+  document.getElementById('stat-total').textContent=films.length;
+  document.getElementById('stat-reels').textContent=reels.length;
+  document.getElementById('stat-in').textContent=films.filter(f=>f.status==='IN ARCHIVE').length;
+  document.getElementById('stat-out').textContent=reels.filter(r=>r.status!=='IN ARCHIVE').length+' reels';
+  document.getElementById('stat-screened').textContent=films.filter(f=>f.screened==='YES').length;
+  document.getElementById('stat-dirs').textContent=new Set(films.map(f=>f.director).filter(Boolean)).size;
+  const scores=films.map(f=>parseInt(f.rtScore)).filter(n=>!isNaN(n));
+  document.getElementById('stat-rt').textContent=scores.length?Math.round(scores.reduce((a,b)=>a+b,0)/scores.length)+'%':'\u2014';
+
+  // Genre bars
+  const gm={};films.forEach(f=>{if(!f.genre)return;f.genre.split(',').forEach(g=>{const k=g.trim();if(k)gm[k]=(gm[k]||0)+1;});});
+  const tg=Object.entries(gm).sort((a,b)=>b[1]-a[1]).slice(0,10);
+  document.getElementById('stat-genres').innerHTML=makeBars(tg,tg[0]?.[1]||1,'genre');
+
+  // Decade bars
+  const dm={};films.forEach(f=>{if(!f.year||isNaN(f.year))return;const dec=Math.floor(parseInt(f.year)/10)*10;dm[dec]=(dm[dec]||0)+1;});
+  const decades=Object.entries(dm).sort((a,b)=>a[0]-b[0]);
+  document.getElementById('stat-decades').innerHTML=makeBars(decades.map(([d,c])=>[d+'s',c]),Math.max(...decades.map(d=>d[1])),'decade');
+
+  // Director bars (top 15)
+  const dirm={};films.forEach(f=>{if(!f.director)return;dirm[f.director]=(dirm[f.director]||0)+1;});
+  const tdirs=Object.entries(dirm).sort((a,b)=>b[1]-a[1]).slice(0,15);
+  document.getElementById('stat-directors').innerHTML='<div style="font-family:var(--mono);font-size:9px;color:var(--text3);margin-bottom:8px;letter-spacing:1px">TAP ANY BAR TO FILTER ARCHIVE</div>'+makeBars(tdirs,tdirs[0]?.[1]||1,'director','film'+(tdirs[0]?.[1]===1?'':'s'));
+
+  // Color bars
+  const cm={};films.forEach(f=>{if(!f.color)return;cm[f.color]=(cm[f.color]||0)+1;});
+  const tc=Object.entries(cm).sort((a,b)=>b[1]-a[1]);
+  document.getElementById('stat-color').innerHTML='<div style="font-family:var(--mono);font-size:9px;color:var(--text3);margin-bottom:8px;letter-spacing:1px">TAP ANY BAR TO FILTER ARCHIVE</div>'+makeBars(tc,tc[0]?.[1]||1,'color');
+
+  // Format bars
+  const fm={};films.forEach(f=>{if(!f.format)return;fm[f.format]=(fm[f.format]||0)+1;});
+  const tf=Object.entries(fm).sort((a,b)=>b[1]-a[1]);
+  document.getElementById('stat-format').innerHTML='<div style="font-family:var(--mono);font-size:9px;color:var(--text3);margin-bottom:8px;letter-spacing:1px">TAP ANY BAR TO FILTER ARCHIVE</div>'+makeBars(tf,tf[0]?.[1]||1,'format');
+
+  // Language bars
+  const lm={};films.forEach(f=>{if(!f.language)return;lm[f.language]=(lm[f.language]||0)+1;});
+  const tl=Object.entries(lm).sort((a,b)=>b[1]-a[1]);
+  document.getElementById('stat-language').innerHTML='<div style="font-family:var(--mono);font-size:9px;color:var(--text3);margin-bottom:8px;letter-spacing:1px">TAP ANY BAR TO FILTER ARCHIVE</div>'+makeBars(tl,tl[0]?.[1]||1,'language');
+}
+
+function applyFilter(type, value){
+  // Decade filter: value is e.g. "1970s", match films whose year starts with that decade
+  activeFilter={type,value};
+  const tab=document.querySelector('[data-view="collection-view"]');
+  switchTab('collection-view',tab);
+  renderFilmList('');
+  updateFilterBanner();
+}
+
+function setFilter(type,value,label){
+  activeFilter={type,value};
+  const cnt=DB.features.filter(f=>{
+    if(type==='genre')return(f.genre||'').toUpperCase().includes(value.toUpperCase());
+    if(type==='director')return(f.director||'').toUpperCase()===value.toUpperCase();
+    if(type==='decade')return f.year&&Math.floor(parseInt(f.year)/10)*10===parseInt(value);
+    if(type==='color')return(f.color||'').toUpperCase().includes(value.toUpperCase());
+    if(type==='format')return(f.format||'').toUpperCase().includes(value.toUpperCase());
+    if(type==='language')return(f.language||'').toUpperCase()===value.toUpperCase();
+  }).length;
+  const banner=document.getElementById('filter-banner');
+  const lbl=document.getElementById('filter-label');
+  if(banner){banner.style.display='flex';}
+  if(lbl){lbl.textContent='Filtered: '+label+' ('+cnt+' films)';}
+  const t=document.querySelector('[data-view="collection-view"]');
+  switchTab('collection-view',t);
+  renderFilmList(document.getElementById('search-input').value);
+}
+function clearFilter(){
+  activeFilter=null;
+  renderFilmList(document.getElementById('search-input').value);
+  updateFilterBanner();
+}
+
+function updateFilterBanner(){
+  const banner=document.getElementById('filter-banner');
+  const label=document.getElementById('filter-label');
+  if(activeFilter){
+    label.textContent=activeFilter.type.toUpperCase()+': '+activeFilter.value;
+    banner.style.display='flex';
+  } else {
+    banner.style.display='none';
+  }
+}
+
+// ---- UTILITIES ----
+function rebuildReelBarcodeFields(countVal){
+  const count=parseInt(countVal)||0;
+  const filmId=document.getElementById('modal-confirm-btn').dataset.filmId;
+  const film=DB.features.find(f=>f.id===filmId);
+  if(!film)return;
+  const existingReels=DB.reels.filter(r=>r.filmTitle===film.title);
+  let rows='';
+  for(let i=1;i<=count;i++){
+    const existing=existingReels.find(r=>String(r.reelNum)===String(i));
+    const bcVal=existing?(existing.barcodeId||''):'';
+    rows+='<div class="modal-form-field"><label>Reel '+i+' Barcode <span style="color:var(--text3);font-weight:400">(optional)</span></label><input type="text" id="edit-reel-'+i+'" value="'+esc(bcVal)+'" placeholder="Scan or type barcode" autocomplete="off" autocorrect="off" spellcheck="false" onkeydown="reelInputKeydown(event,'+i+')"></div>';
+  }
+  const container=document.getElementById('edit-reel-barcode-fields');
+  if(container)container.innerHTML=rows||'<div style="font-family:var(--mono);font-size:10px;color:var(--text3)">Set a number above to assign barcodes.</div>';
+  document.getElementById('modal-confirm-btn').dataset.reelCount=count;
+}
+
+async function deleteFilmFromSheet(film, reels, barcodeAction){
+  setSyncStatus('busy','Removing from Sheet…');
+  try{
+    // Delete film row from Features sheet
+    const fData=await sheetsGet('Features!A2:AE');
+    const fRows=fData.values||[];
+    const fIdx=fRows.findIndex(r=>r[24]&&r[24].toUpperCase()===film.id.toUpperCase());
+    if(fIdx>-1){
+      // Clear the row (Sheets API doesn't delete rows easily without batchUpdate, so we clear it)
+      await sheetsUpdate('Features!A'+(fIdx+2)+':AE'+(fIdx+2),[Array(31).fill('')]);
+    }
+    // Handle reels in Reel Tracker
+    if(reels.length>0){
+      const rData=await sheetsGet('Reel Tracker!A2:I');
+      const rRows=rData.values||[];
+      for(const reel of reels){
+        const rIdx=rRows.findIndex(r=>r[0]&&r[0].toUpperCase()===(reel.barcodeId||'').toUpperCase());
+        if(rIdx>-1){
+          await sheetsUpdate('Reel Tracker!A'+(rIdx+2)+':I'+(rIdx+2),[Array(9).fill('')]);
+        }
+      }
+    }
+    setSyncStatus('live','Film removed from Sheet');
+  }catch(e){
+    setSyncStatus('error','Sheet update failed — delete manually');
+    console.warn('Delete sheet error:',e.message);
+  }
+}
+
+async function getRTScore(title, year){
+  try{
+    const r=await fetch('https://www.omdbapi.com/?apikey='+OMDB_KEY+'&t='+encodeURIComponent(cleanTitle(title))+'&y='+(year||'')+'&type=movie');
+    const d=await r.json();
+    if(d&&d.Ratings){
+      const rt=d.Ratings.find(r=>r.Source==='Rotten Tomatoes');
+      if(rt&&rt.Value)return rt.Value;
+    }
+    // Fallback: try without year
+    if(year){
+      const r2=await fetch('https://www.omdbapi.com/?apikey='+OMDB_KEY+'&t='+encodeURIComponent(cleanTitle(title))+'&type=movie');
+      const d2=await r2.json();
+      if(d2&&d2.Ratings){
+        const rt=d2.Ratings.find(r=>r.Source==='Rotten Tomatoes');
+        if(rt&&rt.Value)return rt.Value;
+      }
+    }
+  }catch(e){}
+  return null;
+}
+
+async function refreshAllScores(){
+  const btn=document.getElementById('refresh-scores-btn');
+  if(btn){btn.disabled=true;btn.textContent='Refreshing…';}
+  setSyncStatus('busy','Fetching RT scores…');
+  let updated=0,failed=0;
+  for(const film of DB.features){
+    try{
+      const rt=await getRTScore(film.title,film.year);
+      if(rt&&rt!==film.rtScore){
+        film.rtScore=rt;
+        updated++;
+        // Write back to sheet if authed
+        if(isAuthed())writeEditToSheet(film).catch(()=>{});
+      } else if(!rt){
+        failed++;
+      }
+    }catch(e){failed++;}
+    await new Promise(r=>setTimeout(r,200)); // rate limit
+  }
+  if(btn){btn.disabled=false;btn.textContent='&#9654; Refresh RT Scores';}
+  render();
+  setSyncStatus('live','RT scores updated');
+  showToast('✓ Updated '+updated+' scores'+(failed?' (— '+failed+' not found)':''));
+}
+
+function toggleScreened(filmId){
+  const film=DB.features.find(f=>f.id===filmId);if(!film)return;
+  film.screened=film.screened==='YES'?'NO':'YES';
+  showToast(film.screened==='YES'?'✓ Marked as screened':'✓ Marked as not screened');
+  render();
+  openDetail(filmId);
+  if(isAuthed())writeEditToSheet(film).catch(()=>{});
+}
+
+function setSort(sortKey){
+  activeSort=sortKey;
+  // Update button styles
+  document.querySelectorAll('.sort-btn').forEach(b=>{
+    const isActive=b.id==='sort-'+sortKey;
+    b.style.background=isActive?'var(--text)':'transparent';
+    b.style.color=isActive?'#fff':'var(--text2)';
+  });
+  renderFilmList(document.getElementById('search-input').value);
+}
+
+
+function exportCollection(){
+  const headers=['Title','Director','Year','Genre','RT Score','Format','Color','Film Stock','Aspect Ratio','Reels','Canned','Serviced','Distributor','Language','Year Obtained','Screened','Inspection Notes','Notes'];
+  const rows=DB.features.map(f=>[
+    f.title,f.director,f.year,f.genre,f.rtScore,f.format,f.color,
+    f.filmStock,f.aspectRatio,f.reels,f.canned,f.serviced,
+    f.distributor,f.language,f.yearObtained,f.screened,
+    f.inspectionNotes,f.notes
+  ].map(v=>(v||'').toString().replace(/"/g,'""')).map(v=>'"'+v+'"').join(','));
+  const csv=[headers.map(h=>'"'+h+'"').join(','),...rows].join('\n');
+  const blob=new Blob([csv],{type:'text/csv'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;a.download='McGano_Plex_'+new Date().toISOString().slice(0,10)+'.csv';
+  a.click();URL.revokeObjectURL(url);
+  showToast('\u2713 CSV exported ('+DB.features.length+' films)');
+}
+
+function printCollection(){
+  const sorted=[...DB.features].sort((a,b)=>{
+    const sk=t=>(t||'').replace(/^THE\s+/i,'').replace(/^A\s+/i,'');
+    return sk(a.title).localeCompare(sk(b.title));
+  });
+  const reelCount=f=>DB.reels.filter(r=>r.filmTitle===f.title).length;
+  const html=`<!DOCTYPE html><html><head><title>McGano Plex Archive</title>
+  <style>
+    body{font-family:Georgia,serif;max-width:900px;margin:0 auto;padding:20px;color:#1a1410}
+    h1{font-size:28px;letter-spacing:3px;text-transform:uppercase;border-bottom:3px solid #c8102e;padding-bottom:10px;margin-bottom:6px}
+    .subtitle{font-family:monospace;font-size:11px;color:#9a8e7e;letter-spacing:2px;margin-bottom:20px}
+    .stats{font-family:monospace;font-size:11px;color:#5a4e3e;margin-bottom:24px}
+    table{width:100%;border-collapse:collapse;font-size:12px}
+    th{font-family:monospace;font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:#c8102e;border-bottom:2px solid #c8102e;padding:6px 8px;text-align:left}
+    td{padding:6px 8px;border-bottom:1px solid #e8e0d0;vertical-align:top}
+    tr:nth-child(even) td{background:#f8f4ee}
+    .title{font-weight:700;font-size:13px}
+    .meta{font-family:monospace;font-size:10px;color:#5a4e3e}
+    @media print{body{padding:10px}.no-print{display:none}}
+  </style></head><body>
+  <h1>McGano Plex</h1>
+  <div class="subtitle">16MM Film Archive</div>
+  <div class="stats">${sorted.length} films &nbsp;&middot;&nbsp; Printed ${new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'})}</div>
+  <table>
+    <tr><th>#</th><th>Title</th><th>Director</th><th>Year</th><th>Genre</th><th>RT</th><th>Reels</th><th>Status</th></tr>
+    ${sorted.map((f,i)=>`<tr>
+      <td class="meta">${i+1}</td>
+      <td><div class="title">${f.title}</div></td>
+      <td class="meta">${f.director||'&mdash;'}</td>
+      <td class="meta">${f.year||'&mdash;'}</td>
+      <td class="meta">${(f.genre||'').split(',').slice(0,2).join(', ')||'&mdash;'}</td>
+      <td class="meta">${f.rtScore||'&mdash;'}</td>
+      <td class="meta">${reelCount(f)||'&mdash;'}</td>
+      <td class="meta">${f.status||'IN ARCHIVE'}</td>
+    </tr>`).join('')}
+  </table>
+  </body></html>`;
+  const w=window.open('','_blank');
+  w.document.write(html);
+  w.document.close();
+  setTimeout(()=>w.print(),500);
+}
+
+function showScanOverlay(code){
+  if(!code||!code.trim())return;
+  code=code.trim();
+  const matchedReels=DB.reels.filter(r=>matchBarcode(r.barcodeId,code));
+  const overlay=document.getElementById('scan-overlay-modal');
+  const box=document.getElementById('scan-overlay-content');
+  if(!overlay||!box)return;
+  if(matchedReels.length>0){
+    const allOut=matchedReels.every(r=>r.status!=='IN ARCHIVE');
+    const film=DB.features.find(f=>f.title===matchedReels[0].filmTitle);
+    const posterHtml=film&&POSTER_CACHE[film.id]?'<img src="'+POSTER_CACHE[film.id]+'" style="width:56px;height:84px;object-fit:cover;border-radius:2px;border:1px solid var(--border);flex-shrink:0">':'';
+    const filmCard=film
+      ?'<div style="display:flex;gap:12px;align-items:flex-start;margin-bottom:14px;padding:10px;background:var(--surface2)">'+posterHtml+'<div><div style="font-family:var(--serif);font-size:17px;font-weight:700;line-height:1.3;margin-bottom:3px">'+esc(film.title)+'</div><div style="font-family:var(--mono);font-size:10px;color:var(--text3)">'+esc(film.director||'')+(film.year?' \u00b7 '+film.year:'')+'</div>'+(film.genre?'<div style="font-family:var(--mono);font-size:10px;color:var(--text3);margin-top:2px">'+esc(film.genre.split(',').slice(0,2).join(', '))+'</div>':'')+'</div></div>'
+      :'';
+    const multiNote=matchedReels.length>1?'<div style="font-family:var(--mono);font-size:10px;color:var(--gold);margin-bottom:10px">'+matchedReels.length+' reels share this barcode \u2014 all will be checked in/out together</div>':'';
+    const statusTag=allOut?'<span class="tag status-out">OUT</span>':'<span class="tag status-in">IN ARCHIVE</span>';
+    const codeEsc=esc(code);
+    const filmIdEsc=film?esc(film.id):'';
+    const viewBtn=film?'<button style="flex:1;padding:11px;background:transparent;border:1px solid var(--border);color:var(--text);font-family:var(--mono);font-size:11px;font-weight:700;cursor:pointer;letter-spacing:1px" onclick="closeScanOverlay();openDetail(\''+filmIdEsc+'\')" >VIEW FILM</button>':'';
+    const outBtn='<button class="btn-checkout" style="flex:1;padding:11px" onclick="overlayCheckOut(\''+codeEsc+'\')">YES, CHECK OUT'+(matchedReels.length>1?' ALL':'')+'</button>';
+    const inBtn='<button class="btn-checkin" style="flex:1;padding:11px" onclick="overlayCheckIn(\''+codeEsc+'\')">YES, CHECK IN'+(matchedReels.length>1?' ALL':'')+'</button>';
+    box.innerHTML=filmCard
+      +'<div style="font-family:var(--mono);font-size:10px;color:var(--gold);margin-bottom:8px">'+codeEsc+' \u00b7 Reel'+(matchedReels.length>1?'s':'')+' '+matchedReels.map(r=>r.reelNum).join(', ')+'</div>'
+      +multiNote
+      +'<div style="margin-bottom:12px">'+statusTag+'</div>'
+      +(!allOut
+        ?'<div style="font-family:var(--mono);font-size:11px;color:var(--text2);margin-bottom:12px">In archive \u2014 check it out?</div><div style="display:flex;gap:8px">'+outBtn+viewBtn+'</div>'
+        :'<div style="font-family:var(--mono);font-size:11px;color:var(--text2);margin-bottom:12px">Checked out \u2014 return it?</div><div style="display:flex;gap:8px">'+inBtn+viewBtn+'</div>');
+  } else {
+    box.innerHTML='<div style="font-family:var(--serif);font-size:16px;font-weight:700;margin-bottom:8px">Not Found</div>'
+      +'<div style="font-family:var(--mono);font-size:11px;color:var(--text3)">Barcode <strong style="color:var(--text)">'+esc(code)+'</strong> is not in the archive.</div>';
+  }
+  overlay.style.display='flex';
+}
+function closeScanOverlay(){
+  const overlay=document.getElementById('scan-overlay-modal');
+  if(overlay)overlay.style.display='none';
+}
+function overlayCheckOut(code){
+  closeScanOverlay();
+  checkOutAll(code);
+}
+function overlayCheckIn(code){
+  closeScanOverlay();
+  checkInAll(code);
+}
+
+function reelInputKeydown(e, reelNum){
+  // On Enter or Tab, auto-advance to next reel input
+  if(e.key==='Enter'||e.key==='Tab'){
+    e.preventDefault();
+    // Try edit-reel-N first, then reel-assign-N
+    const nextNum = reelNum + 1;
+    const nextInput = document.getElementById('edit-reel-'+nextNum)
+      || document.getElementById('reel-assign-'+nextNum);
+    if(nextInput){
+      nextInput.focus();
+      nextInput.select();
+    } else {
+      // Last reel - focus Save button
+      document.getElementById('modal-confirm-btn')?.focus();
+    }
+  }
+}
+
+function openDeleteModal(filmId){
+  const film=DB.features.find(f=>f.id===filmId);if(!film)return;
+  const reels=DB.reels.filter(r=>r.filmTitle===film.title);
+  const barcodes=reels.map(r=>r.barcodeId).filter(Boolean);
+  document.getElementById('modal-title').textContent='Delete Film';
+  document.getElementById('modal-sub').textContent=film.title;
+  document.getElementById('modal-content').innerHTML=
+    '<div style="font-family:var(--mono);font-size:11px;color:var(--text2);margin-bottom:16px;line-height:1.6">'
+    +'This will permanently remove <strong style="color:var(--text)">'+esc(film.title)+'</strong> from the archive.'
+    +(reels.length>0?'<br><br>It has <strong>'+reels.length+' reel'+(reels.length>1?'s':'')+' ('+barcodes.join(', ')+')</strong>. What should happen to the barcodes?':'')
+    +'</div>'
+    +(reels.length>0
+      ?'<div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px">'
+        +'<label style="display:flex;align-items:flex-start;gap:10px;font-family:var(--mono);font-size:11px;cursor:pointer"><input type="radio" name="barcode-action" value="retire" checked style="margin-top:2px"> <span><strong>Retire barcodes</strong> — remove from system entirely (sold / destroyed)</span></label>'
+        +'<label style="display:flex;align-items:flex-start;gap:10px;font-family:var(--mono);font-size:11px;cursor:pointer"><input type="radio" name="barcode-action" value="reuse" style="margin-top:2px"> <span><strong>Free barcodes for reuse</strong> — labels stay on cans, can be reassigned</span></label>'
+        +'</div>'
+      :'')
+    +'<div style="font-family:var(--mono);font-size:10px;color:var(--red);background:#fff0f0;border-left:3px solid var(--red);padding:8px 12px">⚠ This cannot be undone.</div>';
+  document.getElementById('modal-confirm-btn').className='btn-confirm';
+  document.getElementById('modal-confirm-btn').style.background='var(--red)';
+  document.getElementById('modal-confirm-btn').style.borderColor='var(--red)';
+  document.getElementById('modal-confirm-btn').textContent='Delete Film';
+  document.getElementById('modal-confirm-btn').dataset.filmId=filmId;
+  modalAction='delete-film';modalReel=null;
+  openModal();
+}
+
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2800);}
+function esc(s){if(!s)return '';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
+
+// ---- TERA SCANNER (keyboard wedge) ----
+const manualInput=document.getElementById('manual-bc-input');
+let scanBuffer='',scanTimer=null;
+manualInput.addEventListener('keydown',e=>{
+  if(e.key==='Enter'){e.preventDefault();const v=manualInput.value.trim();if(v){lookupBarcode(v);manualInput.value='';}}
+});
+document.addEventListener('keypress',e=>{
+  // Ignore if typing in any input/textarea
+  const tag=document.activeElement.tagName;
+  if(tag==='INPUT'||tag==='TEXTAREA'||tag==='SELECT')return;
+  if(e.key==='Enter'){
+    if(scanBuffer.length>2){
+      const scanTab=document.getElementById('scanner-view-wrap');
+      if(scanTab.classList.contains('active')){
+        // On scan tab - use normal lookup
+        lookupBarcode(scanBuffer);
+      } else {
+        // On any other tab - show overlay
+        showScanOverlay(scanBuffer);
+      }
+      scanBuffer='';
+    }
+    clearTimeout(scanTimer);return;
+  }
+  scanBuffer+=e.key;clearTimeout(scanTimer);scanTimer=setTimeout(()=>{scanBuffer='';},100);
+});
+</script>
+<script>
+if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(e=>console.log('SW:',e));});}
+</script>
+</body>
+</html>
